@@ -31,13 +31,19 @@ import regugraph.ui_components
 importlib.reload(regugraph.ui_components)
 from regugraph.ui_components import (
     get_custom_css,
+    render_digipay_hero,
     render_website_hero,
+    render_fintech_stat_ticker,
+    render_digipay_solutions_grid,
+    render_why_regugraph_pillars,
     render_fintech_security_posture,
     render_how_it_works,
     render_consumer_rights_grid,
     create_dbr_gauge,
     create_fee_comparison_chart,
-    render_executive_redline_item
+    render_executive_redline_item,
+    render_digipay_faq_section,
+    render_digipay_footer
 )
 
 # ---------------------------------------------------------------- Page Config & Styles
@@ -79,11 +85,22 @@ st.write("")
 # PAGE 1: CONTRACT AUDIT PORTAL (Main Consumer/Enterprise Website)
 # ==============================================================================
 if top_nav == "🚀 Contract audit portal":
-    # 1. Premium Website Hero Banner
-    render_website_hero()
+    # 1. Luxury Dubai FinTech Hero Banner (DigiPay Style)
+    render_digipay_hero()
 
     # 1b. FinTech Security Posture Banner (Google Cloud WAF Aligned)
     render_fintech_security_posture()
+
+    # 1c. High-Impact Market Stats Ticker
+    render_fintech_stat_ticker()
+
+    # 1d. Comprehensive FinTech Solutions Suite (DigiPay 6-Card Pattern)
+    render_digipay_solutions_grid()
+
+    # 1e. Why ReguGraph Value Pillars (4-Card Strategic Advantage)
+    render_why_regugraph_pillars()
+
+    st.markdown("---")
 
     # 2. 3-Step "How It Works" Visual Guide
     render_how_it_works()
@@ -271,6 +288,15 @@ if top_nav == "🚀 Contract audit portal":
                         width="stretch"
                     )
 
+    st.write("")
+    st.markdown("---")
+
+    # 4. Frequently Asked Questions (DigiPay Style FAQ Accordion)
+    render_digipay_faq_section()
+
+    # 5. Institutional Dubai FinTech Footer
+    render_digipay_footer()
+
 
 # ==============================================================================
 # PAGE 2: KNOW YOUR RIGHTS & CBUAE REGULATORY CODEX
@@ -339,6 +365,10 @@ elif top_nav == "⚖️ Know your rights & CBUAE codex":
         with st.expander(f"📜 {meta.get('circular_ref')} — {meta.get('article_header')}"):
             st.caption(f"Source Document: `{meta.get('source')}` | Scope: `{meta.get('category')}`")
             st.markdown(d.page_content)
+
+    st.write("")
+    st.markdown("---")
+    render_digipay_footer()
 
 
 # ==============================================================================
@@ -486,6 +516,10 @@ elif top_nav == "🧮 Statutory financial simulators":
                 - **Statutory Authority:** CBUAE Circular 31/2013 Article 3
                 """)
 
+    st.write("")
+    st.markdown("---")
+    render_digipay_footer()
+
 
 # ==============================================================================
 # PAGE 4: SYSTEM ARCHITECTURE & DIAGNOSTICS (For Technical Judges / Engineers)
@@ -582,3 +616,7 @@ elif top_nav == "⚙️ System diagnostics & RAG architecture":
             st.markdown(report_path.read_text(encoding="utf-8"))
     else:
         st.info("Evaluation report available in evaluation/EVALUATION_REPORT.md.")
+
+    st.write("")
+    st.markdown("---")
+    render_digipay_footer()
