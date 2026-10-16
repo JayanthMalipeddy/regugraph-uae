@@ -26,6 +26,9 @@ from regugraph.report_generator import generate_markdown_dossier
 from regugraph.ingestion import load_cbuae_corpus
 from regugraph.core_math import calculate_dbr, audit_early_settlement_fee
 from regugraph.agents import RegulatoryLLM
+import importlib
+import regugraph.ui_components
+importlib.reload(regugraph.ui_components)
 from regugraph.ui_components import (
     get_custom_css,
     render_website_hero,
