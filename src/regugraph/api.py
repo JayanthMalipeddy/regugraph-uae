@@ -527,26 +527,49 @@ def list_regulatory_corpus():
     }
 
 
+from regugraph.eval_store import (
+    get_latest_evaluation_run,
+    get_evaluation_run_history,
+    trigger_evaluation_and_persist
+)
+
+
+@app.get("/api/evaluations/latest")
+def get_latest_eval():
+    """Fetch the latest evaluation run and metrics directly from ChromaDB collection 'cbuae_eval_runs'."""
+    return get_latest_evaluation_run()
+
+
+@app.get("/api/evaluations/history")
+def get_eval_history():
+    """Fetch historical evaluation runs stored in ChromaDB."""
+    return {"history": get_evaluation_run_history()}
+
+
+@app.post("/api/evaluations/run")
+def run_live_eval():
+    """Trigger live re-run of 15-inquiry benchmark suite, compute scores, and persist to ChromaDB."""
+    return trigger_evaluation_and_persist()
+
+
 @app.get("/api/benchmarks")
 def get_benchmark_results():
-    """Return the 15-inquiry benchmark suite specification and verification metrics."""
-    test_queries_file = EVALUATION_DIR / "test_queries.json"
-    queries = []
-    if test_queries_file.exists():
-        import json
-        with open(test_queries_file, "r", encoding="utf-8") as f:
-            queries = json.load(f)
-
+    """Return the benchmark suite with live results fetched from ChromaDB."""
+    latest = get_latest_evaluation_run()
     return {
         "evaluation_title": "ReguGraph-UAE Autonomous CBUAE RAG Benchmark",
-        "total_cases": len(queries),
+        "total_cases": latest["total_cases"],
+        "run_id": latest["run_id"],
+        "timestamp": latest["timestamp"],
+        "overall_score": latest["overall_score"],
         "verified_metrics": {
-            "recall_at_3": "100.0%",
-            "citation_accuracy": "100.0%",
-            "refusal_precision": "100.0%",
-            "average_latency_ms": 28.4
+            "recall_at_3": f"{latest['recall_at_3']}%",
+            "citation_accuracy": f"{latest['citation_accuracy']}%",
+            "refusal_precision": f"{latest['refusal_precision']}%",
+            "rag_faithfulness": f"{latest['rag_faithfulness']}%",
+            "average_latency_ms": latest["avg_latency_ms"]
         },
-        "test_cases": queries
+        "test_cases": latest["cases"]
     }
 
 

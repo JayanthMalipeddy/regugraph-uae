@@ -129,3 +129,24 @@ export async function fetchBenchmarks(): Promise<any> {
   if (!res.ok) throw new Error('Failed to fetch benchmark data');
   return res.json();
 }
+
+export async function fetchLatestEvaluation(): Promise<any> {
+  const res = await fetch(`${API_BASE}/evaluations/latest`);
+  if (!res.ok) throw new Error('Failed to fetch latest evaluation run from ChromaDB');
+  return res.json();
+}
+
+export async function fetchEvaluationHistory(): Promise<{ history: any[] }> {
+  const res = await fetch(`${API_BASE}/evaluations/history`);
+  if (!res.ok) throw new Error('Failed to fetch evaluation history from ChromaDB');
+  return res.json();
+}
+
+export async function runLiveEvaluation(): Promise<any> {
+  const res = await fetch(`${API_BASE}/evaluations/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!res.ok) throw new Error('Failed to execute live RAG evaluation suite');
+  return res.json();
+}
