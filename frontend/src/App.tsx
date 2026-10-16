@@ -3,9 +3,9 @@ import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { AuditStudio } from './components/AuditStudio';
 import { CalculatorsHub } from './components/CalculatorsHub';
-import { RegulatoryCodex } from './components/RegulatoryCodex';
 import { DiagnosticsHub } from './components/DiagnosticsHub';
 import { AuthModal } from './components/AuthModal';
+import { AIAuditAgent } from './components/AIAuditAgent';
 import { fetchHealth, fetchScenarios } from './services/api';
 import type { HealthStatus, ContractScenario } from './types';
 import { ShieldCheck, ExternalLink } from 'lucide-react';
@@ -24,6 +24,13 @@ export function App() {
   const [scenarios, setScenarios] = useState<ContractScenario[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Sidebar Expand / Collapse State
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState<boolean>(false);
+
+  // AI Audit Agent Floating Chatbot State
+  const [isChatbotOpen, setIsChatbotOpen] = useState<boolean>(false);
+  const [chatbotInitialQuery, setChatbotInitialQuery] = useState<string>('');
+
   // Authentication State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
@@ -41,26 +48,41 @@ export function App() {
     });
   }, []);
 
+  // Global search triggers AI Audit Agent chatbot with user inquiry
   const handleGlobalSearch = (q: string) => {
     if (q.trim()) {
-      setActiveTab('codex');
+      setChatbotInitialQuery(q);
+      setIsChatbotOpen(true);
     }
+  };
+
+  // Dedicated Home button handler
+  const handleGoHome = () => {
+    setActiveTab('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 flex font-sans selection:bg-cyan-500/20 selection:text-cyan-400">
       
-      {/* Left Slim Sidebar (matching fintechui.jpeg) */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      {/* Left Collapsible/Expandable Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenChatbot={() => setIsChatbotOpen(true)}
+        isExpanded={isSidebarExpanded}
+        setIsExpanded={setIsSidebarExpanded}
+      />
 
       {/* Main App Container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         
-        {/* Top Navbar (matching fintechui.jpeg with search shortcut and user profile) */}
+        {/* Top Navbar with Home Button and Keyboard-Focused Search */}
         <Navbar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onSearchSubmit={handleGlobalSearch}
+          onGoHome={handleGoHome}
           currentUser={currentUser}
           onOpenAuth={(mode) => {
             setAuthInitialMode(mode);
@@ -80,9 +102,10 @@ export function App() {
             </div>
           ) : (
             <>
-              {activeTab === 'dashboard' && <AuditStudio scenarios={scenarios} />}
+              {(activeTab === 'dashboard' || activeTab === 'codex') && (
+                <AuditStudio scenarios={scenarios} />
+              )}
               {activeTab === 'calculators' && <CalculatorsHub />}
-              {activeTab === 'codex' && <RegulatoryCodex initialQuery={searchQuery} />}
               {activeTab === 'diagnostics' && <DiagnosticsHub health={health} />}
             </>
           )}
@@ -116,6 +139,13 @@ export function App() {
         </footer>
 
       </div>
+
+      {/* Floating AI Audit Agent Chatbot at Right Bottom */}
+      <AIAuditAgent
+        isOpen={isChatbotOpen}
+        setIsOpen={setIsChatbotOpen}
+        initialQuery={chatbotInitialQuery}
+      />
 
       {/* Institutional Enterprise Authentication Modal */}
       <AuthModal

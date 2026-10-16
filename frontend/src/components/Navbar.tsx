@@ -1,5 +1,14 @@
-import React from 'react';
-import { Search, Bell, Command, LogIn, UserPlus, LogOut, ShieldCheck } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import {
+  Search,
+  Bell,
+  Command,
+  LogIn,
+  UserPlus,
+  LogOut,
+  ShieldCheck,
+  Home
+} from 'lucide-react';
 
 interface UserProfile {
   name: string;
@@ -12,6 +21,7 @@ interface NavbarProps {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   onSearchSubmit: (q: string) => void;
+  onGoHome: () => void;
   currentUser: UserProfile | null;
   onOpenAuth: (mode: 'signin' | 'signup') => void;
   onLogout: () => void;
@@ -21,32 +31,92 @@ export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
   setSearchQuery,
   onSearchSubmit,
+  onGoHome,
   currentUser,
   onOpenAuth,
   onLogout
 }) => {
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Global keyboard shortcut listener for Ctrl+Space, Cmd+Space, and Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+Space or Cmd+Space or Ctrl+K
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      if (isCmdOrCtrl && (e.code === 'Space' || e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleKeyDownInInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (searchQuery.trim()) {
+        onSearchSubmit(searchQuery.trim());
+      }
+    } else if (e.key === 'Escape') {
+      searchInputRef.current?.blur();
+    }
+  };
+
   return (
     <header className="h-20 border-b border-slate-800/80 px-6 sm:px-8 flex items-center justify-between bg-[#0a0f1d]/80 backdrop-blur-md sticky top-0 z-40">
       
-      {/* Search Input Bar */}
-      <div className="relative w-72 sm:w-96">
-        <div className="flex items-center bg-[#131b2e] border border-slate-800/90 rounded-2xl px-4 py-2.5 text-xs text-slate-300 focus-within:border-cyan-500/80 transition-all shadow-inner">
-          <Search className="h-4 w-4 text-slate-400 shrink-0 mr-2.5" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') onSearchSubmit(searchQuery);
-            }}
-            placeholder="Search regulations, facilities, fee caps..."
-            className="w-full bg-transparent border-none text-white placeholder-slate-500 focus:outline-none text-xs"
-          />
-          <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[10px] text-slate-400 font-mono shrink-0 ml-2">
-            <Command className="h-3 w-3" />
-            <span>+ Space</span>
+      {/* Left Area: Home Button + Search Bar */}
+      <div className="flex items-center gap-2.5">
+        
+        {/* Dedicated Home Button beside Search Bar (as requested by user) */}
+        <button
+          onClick={onGoHome}
+          title="Return to Dashboard Home"
+          className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#131b2e] hover:bg-slate-800 border border-slate-800 text-slate-200 hover:text-white text-xs font-semibold transition-all cursor-pointer shadow-sm hover:border-slate-700 shrink-0"
+        >
+          <Home className="h-4 w-4 text-cyan-400" />
+          <span className="hidden sm:inline">Home</span>
+        </button>
+
+        {/* Search Input Bar with Global Focus & Execution */}
+        <div className="relative w-64 sm:w-80 md:w-96">
+          <div className="flex items-center bg-[#131b2e] border border-slate-800/90 rounded-2xl px-4 py-2.5 text-xs text-slate-300 focus-within:border-cyan-500/80 transition-all shadow-inner">
+            <Search
+              onClick={() => {
+                searchInputRef.current?.focus();
+                if (searchQuery.trim()) onSearchSubmit(searchQuery.trim());
+              }}
+              className="h-4 w-4 text-slate-400 shrink-0 mr-2.5 cursor-pointer hover:text-cyan-400 transition-colors"
+            />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDownInInput}
+              placeholder="Search regulations, facilities, fee caps..."
+              className="w-full bg-transparent border-none text-white placeholder-slate-500 focus:outline-none text-xs"
+            />
+
+            {/* Clickable Keyboard Shortcut Pill (Pressing Ctrl+Space or Clicking it focuses search) */}
+            <button
+              type="button"
+              onClick={() => {
+                searchInputRef.current?.focus();
+                searchInputRef.current?.select();
+              }}
+              className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-400 hover:text-slate-200 font-mono shrink-0 ml-2 transition-colors cursor-pointer"
+              title="Shortcut: Press Ctrl+Space or ⌘+Space to focus search"
+            >
+              <Command className="h-3 w-3" />
+              <span>+ Space</span>
+            </button>
           </div>
         </div>
+
       </div>
 
       {/* Right User & Actions Bar */}
@@ -110,3 +180,5 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
+export default Navbar;

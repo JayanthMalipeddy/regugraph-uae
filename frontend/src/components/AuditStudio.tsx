@@ -8,7 +8,8 @@ import {
   AlertCircle,
   Sliders,
   Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  Search
 } from 'lucide-react';
 import type { ContractScenario, AuditResponse } from '../types';
 import { auditContract, exportAuditReport } from '../services/api';
@@ -19,6 +20,8 @@ interface AuditStudioProps {
 
 export const AuditStudio: React.FC<AuditStudioProps> = ({ scenarios }) => {
   const [viewMode, setViewMode] = useState<'blocks' | 'list' | 'table'>('blocks');
+  const [listCategory, setListCategory] = useState<'all' | 'personal' | 'mortgage' | 'auto'>('all');
+  const [tableFilter, setTableFilter] = useState<string>('');
   const [timePeriod, setTimePeriod] = useState<'1y' | '6m' | '3m' | '1m'>('6m');
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>('scenario-1');
   const [isAuditing, setIsAuditing] = useState<boolean>(false);
@@ -97,6 +100,129 @@ Governing Law: Central Bank of the United Arab Emirates.`;
       URL.revokeObjectURL(url);
     } catch (err) {
       alert('Error downloading report: ' + err);
+    }
+  };
+
+  const baseFacilities = [
+    {
+      id: 'fac-1',
+      scenarioId: 'scenario-1',
+      title: 'Predatory Personal Loan Facility',
+      bankName: 'Apex Gulf Finance',
+      bankBadge: 'AGF',
+      loanType: 'Personal Loan',
+      category: 'personal',
+      principalAed: 400000,
+      tenureMonths: 60,
+      emiAed: 8333,
+      dbrPercent: 56.0,
+      isCompliant: false,
+      statusLabel: 'CRITICAL BREACH',
+      restitutionAed: 16050,
+      authority: 'Circular 8/2020 & Notice 2011/23',
+      summary: 'Features unlawful 3% exit penalty (AED 12,000), 60-month tenure exceeding 48-month statutory cap, and 56% DBR.'
+    },
+    {
+      id: 'fac-2',
+      scenarioId: 'scenario-2',
+      title: 'Compliant Residential Mortgage Agreement',
+      bankName: 'Emirates First Bank',
+      bankBadge: 'EFB',
+      loanType: 'Residential Mortgage',
+      category: 'mortgage',
+      principalAed: 1200000,
+      tenureMonths: 300,
+      emiAed: 6850,
+      dbrPercent: 32.4,
+      isCompliant: true,
+      statusLabel: 'FULLY COMPLIANT',
+      restitutionAed: 0,
+      authority: 'Circular 31/2013 & Notice 3877/2019',
+      summary: 'Tier-1 mortgage agreement strictly compliant with CBUAE 25-year tenure cap, 80% LTV, and 1% capped settlement.'
+    },
+    {
+      id: 'fac-3',
+      scenarioId: 'scenario-3',
+      title: 'Subprime Auto Financing Facility',
+      bankName: 'Falcon Auto Credit',
+      bankBadge: 'FAC',
+      loanType: 'Auto Loan',
+      category: 'auto',
+      principalAed: 180000,
+      tenureMonths: 72,
+      emiAed: 3200,
+      dbrPercent: 38.0,
+      isCompliant: false,
+      statusLabel: 'TENURE VIOLATION',
+      restitutionAed: 2250,
+      authority: 'Notice 2011/23 Art 5.1',
+      summary: '72-month vehicle loan breaching CBUAE 60-month statutory ceiling with excess compound late fee clauses.'
+    },
+    {
+      id: 'fac-4',
+      scenarioId: 'custom',
+      title: 'Corporate Treasury Working Capital Line',
+      bankName: 'First Abu Dhabi Bank',
+      bankBadge: 'FAB',
+      loanType: 'Corporate Line',
+      category: 'personal',
+      principalAed: 950000,
+      tenureMonths: 48,
+      emiAed: 21200,
+      dbrPercent: 28.5,
+      isCompliant: true,
+      statusLabel: 'COMPLIANT',
+      restitutionAed: 0,
+      authority: 'CBUAE Commercial Standards',
+      summary: 'Prime corporate debt facility monitored for liquidity ratios and verified fee structures.'
+    },
+    {
+      id: 'fac-5',
+      scenarioId: 'scenario-4',
+      title: 'UK Consumer Credit Facility',
+      bankName: 'Barclays London Branch',
+      bankBadge: 'BAR',
+      loanType: 'Foreign Jurisdiction',
+      category: 'personal',
+      principalAed: 120000,
+      tenureMonths: 48,
+      emiAed: 2800,
+      dbrPercent: 0,
+      isCompliant: false,
+      statusLabel: 'OUT OF SCOPE REFUSAL',
+      restitutionAed: 0,
+      authority: 'UK Financial Conduct Authority (FCA)',
+      summary: 'Governed by UK FCA laws. Triggers autonomous jurisdiction refusal gate to safeguard CBUAE scope.'
+    }
+  ];
+
+  const filteredFacilities = baseFacilities.filter((f) => {
+    if (listCategory !== 'all' && f.category !== listCategory) return false;
+    return true;
+  });
+
+  const tableRows = baseFacilities.filter((f) => {
+    if (!tableFilter.trim()) return true;
+    const q = tableFilter.toLowerCase();
+    return (
+      f.title.toLowerCase().includes(q) ||
+      f.bankName.toLowerCase().includes(q) ||
+      f.loanType.toLowerCase().includes(q) ||
+      f.statusLabel.toLowerCase().includes(q) ||
+      f.authority.toLowerCase().includes(q)
+    );
+  });
+
+  const handleAuditFromFacility = (fac: typeof baseFacilities[0]) => {
+    const matched = scenarios.find((s) => s.id === fac.scenarioId);
+    if (matched) {
+      handleSelectPreset(matched);
+    } else {
+      setBankName(fac.bankName);
+      setLoanType(fac.loanType);
+      setLoanAmount(fac.principalAed);
+      setTenureMonths(fac.tenureMonths);
+      handleCompileSimpleInput();
     }
   };
 
@@ -181,8 +307,13 @@ Governing Law: Central Bank of the United Arab Emirates.`;
         })}
       </div>
 
-      {/* TOP ROW: Total Balance Chart (Left) + My Cards / Active Facility (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* ============================================================== */}
+      {/* 1. BLOCKS VIEW (Default Visual FinTech Dashboard)              */}
+      {/* ============================================================== */}
+      {viewMode === 'blocks' && (
+        <>
+          {/* TOP ROW: Total Balance Chart (Left) + My Cards / Active Facility (Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Total Credit Exposure & Commitment Trend (8 cols) - matching fintechui.jpeg */}
         <div className="lg:col-span-7 xl:col-span-8 rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 p-6 flex flex-col justify-between shadow-xl">
@@ -719,6 +850,211 @@ Governing Law: Central Bank of the United Arab Emirates.`;
         </div>
 
       </div>
+    </>
+  )}
+
+      {/* ============================================================== */}
+      {/* 2. LIST VIEW (Structured Vertical Facility Feed)               */}
+      {/* ============================================================== */}
+      {viewMode === 'list' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* List Filter Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0f172a]/70 p-4 rounded-3xl border border-slate-800/90 shadow-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-300">Filter Facilities:</span>
+              {(['all', 'personal', 'mortgage', 'auto'] as const).map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setListCategory(cat)}
+                  className={`px-3 py-1 rounded-xl text-xs font-medium capitalize transition-all cursor-pointer ${
+                    listCategory === cat
+                      ? 'bg-cyan-500 text-slate-950 font-bold shadow-md'
+                      : 'bg-[#131b2e] text-slate-400 hover:text-white border border-slate-800'
+                  }`}
+                >
+                  {cat === 'all' ? 'All Facilities' : cat}
+                </button>
+              ))}
+            </div>
+            <div className="text-xs text-slate-400">
+              Showing <strong className="text-white">{filteredFacilities.length}</strong> audited banking lines
+            </div>
+          </div>
+
+          {/* List Items */}
+          <div className="space-y-3">
+            {filteredFacilities.map((fac) => (
+              <div
+                key={fac.id}
+                className="p-5 rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 hover:border-slate-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-[#0a0f1d] border border-slate-800 flex items-center justify-center font-extrabold text-xs text-cyan-400 shrink-0 shadow-inner">
+                    {fac.bankBadge}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-white">{fac.title}</h3>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        {fac.loanType}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1 max-w-xl">{fac.summary}</p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-slate-400 mt-2">
+                      <span>Principal: <strong className="text-white">AED {fac.principalAed.toLocaleString()}</strong></span>
+                      <span>•</span>
+                      <span>Tenure: <strong className="text-white">{fac.tenureMonths} Mo</strong></span>
+                      <span>•</span>
+                      <span>EMI: <strong className="text-white">AED {fac.emiAed.toLocaleString()}/mo</strong></span>
+                      {fac.dbrPercent > 0 && (
+                        <>
+                          <span>•</span>
+                          <span>DBR: <strong className="text-cyan-400">{fac.dbrPercent}%</strong></span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-2 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-800/60">
+                  <div className="text-right">
+                    <span
+                      className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        fac.isCompliant
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                      }`}
+                    >
+                      {fac.statusLabel}
+                    </span>
+                    {fac.restitutionAed > 0 && (
+                      <div className="text-xs font-mono font-bold text-amber-400 mt-1">
+                        +AED {fac.restitutionAed.toLocaleString()} Restitution Due
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-1">
+                    <button
+                      onClick={() => handleAuditFromFacility(fac)}
+                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs shadow-md transition-all cursor-pointer"
+                    >
+                      Audit Facility
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* 3. TABLE VIEW (Comprehensive Institutional Financial Table)     */}
+      {/* ============================================================== */}
+      {viewMode === 'table' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Table Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0f172a]/70 p-4 rounded-3xl border border-slate-800/90 shadow-lg">
+            <div className="flex items-center gap-2 w-full sm:w-80">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" />
+                <input
+                  type="text"
+                  value={tableFilter}
+                  onChange={(e) => setTableFilter(e.target.value)}
+                  placeholder="Filter by bank, agreement, status..."
+                  className="w-full bg-[#0a0f1d] border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 shadow-inner"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-slate-400">
+              <span>Exposure: <strong className="text-white font-mono">AED 2,850,000.00</strong></span>
+              <span>•</span>
+              <span>Overcharges: <strong className="text-amber-400 font-mono">AED 18,300.00</strong></span>
+            </div>
+          </div>
+
+          {/* Responsive Data Table */}
+          <div className="rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 overflow-hidden shadow-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#0a0f1d] border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                  <tr>
+                    <th className="py-4 px-5">Facility Agreement</th>
+                    <th className="py-4 px-4">Type</th>
+                    <th className="py-4 px-4 font-mono">Principal (AED)</th>
+                    <th className="py-4 px-4">Tenure</th>
+                    <th className="py-4 px-4 font-mono">Monthly EMI</th>
+                    <th className="py-4 px-4">Compliance Status</th>
+                    <th className="py-4 px-4 font-mono">Restitution</th>
+                    <th className="py-4 px-4">Governing Authority</th>
+                    <th className="py-4 px-5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {tableRows.map((row) => (
+                    <tr key={row.id} className="hover:bg-[#131b2e]/60 transition-colors">
+                      <td className="py-4 px-5">
+                        <div className="font-bold text-white text-xs">{row.title}</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{row.bankName}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
+                          {row.loanType}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 font-mono font-semibold text-white">
+                        AED {row.principalAed.toLocaleString()}
+                      </td>
+                      <td className="py-4 px-4 text-slate-300">
+                        {row.tenureMonths} Mos
+                      </td>
+                      <td className="py-4 px-4 font-mono text-slate-300">
+                        AED {row.emiAed.toLocaleString()}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            row.isCompliant
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                          }`}
+                        >
+                          {row.statusLabel}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 font-mono font-bold text-amber-400">
+                        {row.restitutionAed > 0 ? `+AED ${row.restitutionAed.toLocaleString()}` : 'AED 0.00'}
+                      </td>
+                      <td className="py-4 px-4 text-[10px] text-slate-400 font-mono">
+                        {row.authority}
+                      </td>
+                      <td className="py-4 px-5 text-right">
+                        <button
+                          onClick={() => handleAuditFromFacility(row)}
+                          className="px-3 py-1 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
+                        >
+                          Audit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Summary Footer */}
+            <div className="py-3 px-5 bg-[#0a0f1d] border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 gap-2">
+              <span>Showing {tableRows.length} facilities monitored under CBUAE banking regulations</span>
+              <div className="flex items-center gap-4 text-[11px] font-mono">
+                <span>Total Monitored: <strong className="text-white">5 Facilities</strong></span>
+                <span>Audit Accuracy: <strong className="text-emerald-400">100% Deterministic</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* HUMAN-FRIENDLY BORROWER AUDIT MODAL (Replaces Technical Jargon) */}
