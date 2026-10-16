@@ -1,5 +1,5 @@
 # Central Bank of the United Arab Emirates (CBUAE)
-## Standardized Schedule of Fee Caps on Banking Services to Retail Customers
+## Circular No. 8/2020: Standardized Schedule of Fee Caps on Banking Services to Retail Customers
 
 | Fee Type | Central Bank Statutory Cap (Excl. VAT) | Regulatory Clause Reference | Permitted Deviations |
 | :--- | :--- | :--- | :--- |

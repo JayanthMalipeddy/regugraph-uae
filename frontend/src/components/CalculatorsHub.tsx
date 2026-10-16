@@ -3,9 +3,7 @@ import {
   Percent,
   Building,
   TrendingDown,
-  CheckCircle2,
-  Copy,
-  FileCheck,
+  ShieldCheck,
   Scale
 } from 'lucide-react';
 import { calculateDBR, calculateEarlySettlement, calculateMortgageLTV } from '../services/api';
@@ -27,11 +25,9 @@ export const CalculatorsHub: React.FC = () => {
   // --- Early Settlement State ---
   const [principal, setPrincipal] = useState<number>(450000);
   const [chargedFee, setChargedFee] = useState<number>(13500);
-  const [borrowerName, setBorrowerName] = useState<string>('Fatima Al-Mansouri');
-  const [bankName, setBankName] = useState<string>('First Emirates Commercial Bank');
+  const [bankName, setBankName] = useState<string>('Apex Commercial Bank');
   const [accountNo, setAccountNo] = useState<string>('AE-LN-2024-9912');
   const [settlementResult, setSettlementResult] = useState<EarlySettlementResponse | null>(null);
-  const [copiedDemand, setCopiedDemand] = useState<boolean>(false);
 
   // --- Mortgage LTV State ---
   const [propertyVal, setPropertyVal] = useState<number>(3500000);
@@ -63,14 +59,13 @@ export const CalculatorsHub: React.FC = () => {
       calculateEarlySettlement({
         outstanding_principal: principal,
         charged_fee_amount: chargedFee,
-        borrower_name: borrowerName,
         bank_name: bankName,
         loan_account_no: accountNo
       })
         .then(setSettlementResult)
         .catch(console.error);
     }
-  }, [principal, chargedFee, borrowerName, bankName, accountNo]);
+  }, [principal, chargedFee, bankName, accountNo]);
 
   // Run Mortgage LTV calculation whenever inputs change
   useEffect(() => {
@@ -86,38 +81,31 @@ export const CalculatorsHub: React.FC = () => {
     }
   }, [propertyVal, isUaeNational, isFirstHome, isOffPlan]);
 
-  const copyDemandLetter = () => {
-    if (!settlementResult) return;
-    navigator.clipboard.writeText(settlementResult.formal_demand_letter);
-    setCopiedDemand(true);
-    setTimeout(() => setCopiedDemand(false), 2000);
-  };
-
   return (
     <div className="space-y-8 pb-16">
       
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 p-6 sm:p-8 border border-slate-800 shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#101728] via-[#0d1424] to-[#0a0f1d] p-6 sm:p-8 border border-slate-800/90 shadow-xl">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-semibold uppercase tracking-wider mb-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-3">
             <Scale className="h-3.5 w-3.5" />
-            Deterministic IEEE 754 Math Engine
+            Deterministic Financial Mathematics
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Statutory Financial Compliance Calculators
           </h1>
           <p className="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
-            Execute exact, non-hallucinatory mathematical evaluations aligned with CBUAE Notice 2011/23, Notice 3877/2019,
-            and Circular 31/2013 regulations.
+            Verify exact borrowing capacity, loan payoff statutory fee caps, and mortgage equity quotas
+            under official Central Bank of the UAE regulations.
           </p>
         </div>
       </div>
 
-      {/* Calculator Mode Switcher */}
-      <div className="flex border-b border-slate-800 space-x-2">
+      {/* Mode Switcher */}
+      <div className="flex border-b border-slate-800/80 space-x-2">
         {[
           { id: 'dbr', label: 'Debt Burden Ratio (DBR)', icon: Percent },
-          { id: 'settlement', label: '1% Early Settlement Overcharge', icon: TrendingDown },
+          { id: 'settlement', label: '1% Early Settlement Cap & Refund', icon: TrendingDown },
           { id: 'mortgage', label: 'Mortgage LTV & Downpayment', icon: Building },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -128,7 +116,7 @@ export const CalculatorsHub: React.FC = () => {
               onClick={() => setActiveCalc(tab.id as any)}
               className={`flex items-center gap-2 px-4 py-3 border-b-2 text-xs font-semibold transition-all cursor-pointer ${
                 isActive
-                  ? 'border-emerald-500 text-emerald-400 bg-emerald-500/5'
+                  ? 'border-cyan-400 text-cyan-400 bg-cyan-500/5'
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
               }`}
             >
@@ -146,10 +134,10 @@ export const CalculatorsHub: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in duration-200">
           
           {/* Input Controls (7 cols) */}
-          <div className="lg:col-span-7 rounded-2xl bg-slate-900/50 border border-slate-800 p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="lg:col-span-7 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Percent className="h-4 w-4 text-emerald-400" />
+                <Percent className="h-4 w-4 text-cyan-400" />
                 Monthly Income & Financial Commitments
               </h2>
               <span className="text-[11px] text-slate-400 font-mono">Notice 2011/23 Art 2</span>
@@ -161,7 +149,7 @@ export const CalculatorsHub: React.FC = () => {
               <div className="space-y-1.5 sm:col-span-2">
                 <label className="text-xs font-medium text-slate-300 flex justify-between">
                   <span>Gross Monthly Salary (AED)</span>
-                  <span className="text-emerald-400 font-mono font-bold">AED {salary.toLocaleString()}</span>
+                  <span className="text-cyan-400 font-mono font-bold">AED {salary.toLocaleString()}</span>
                 </label>
                 <input
                   type="number"
@@ -169,7 +157,7 @@ export const CalculatorsHub: React.FC = () => {
                   step="500"
                   value={salary}
                   onChange={(e) => setSalary(Math.max(1, parseFloat(e.target.value) || 0))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -185,7 +173,7 @@ export const CalculatorsHub: React.FC = () => {
                   step="100"
                   value={personalEmi}
                   onChange={(e) => setPersonalEmi(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -201,7 +189,7 @@ export const CalculatorsHub: React.FC = () => {
                   step="100"
                   value={autoEmi}
                   onChange={(e) => setAutoEmi(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -217,7 +205,7 @@ export const CalculatorsHub: React.FC = () => {
                   step="250"
                   value={mortgageEmi}
                   onChange={(e) => setMortgageEmi(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -225,7 +213,7 @@ export const CalculatorsHub: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-300 flex justify-between">
                   <span>Credit Card Limits</span>
-                  <span className="text-amber-400 font-mono">5% = AED {(cardLimits * 0.05).toLocaleString()}</span>
+                  <span className="text-amber-400 font-mono">5% Rule = AED {(cardLimits * 0.05).toLocaleString()}</span>
                 </label>
                 <input
                   type="number"
@@ -233,14 +221,14 @@ export const CalculatorsHub: React.FC = () => {
                   step="1000"
                   value={cardLimits}
                   onChange={(e) => setCardLimits(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               {/* Other Debt */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-300 flex justify-between">
-                  <span>Other Obligations</span>
+                  <span>Other Commitments</span>
                   <span className="text-slate-400 font-mono">AED {otherDebt.toLocaleString()}</span>
                 </label>
                 <input
@@ -249,12 +237,12 @@ export const CalculatorsHub: React.FC = () => {
                   step="100"
                   value={otherDebt}
                   onChange={(e) => setOtherDebt(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               {/* Pensioner Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#0a0f1d] border border-slate-800/90">
                 <div>
                   <div className="text-xs font-medium text-white">Retiree / Pensioner Cap</div>
                   <div className="text-[10px] text-slate-400">Statutory 30% cap vs 50% regular cap</div>
@@ -263,7 +251,7 @@ export const CalculatorsHub: React.FC = () => {
                   type="button"
                   onClick={() => setIsPensioner(!isPensioner)}
                   className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isPensioner ? 'bg-emerald-600' : 'bg-slate-700'
+                    isPensioner ? 'bg-cyan-500' : 'bg-slate-700'
                   }`}
                 >
                   <span
@@ -278,13 +266,13 @@ export const CalculatorsHub: React.FC = () => {
           </div>
 
           {/* DBR Output & Gauge (5 cols) */}
-          <div className="lg:col-span-5 rounded-2xl bg-slate-900/50 border border-slate-800 p-6 flex flex-col justify-between space-y-6">
+          <div className="lg:col-span-5 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 p-6 flex flex-col justify-between space-y-6">
             <div>
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                 <h2 className="text-sm font-bold text-white">CBUAE DBR Statutory Audit</h2>
                 {dbrResult && (
                   <span
-                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                       dbrResult.is_compliant
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                         : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
@@ -295,7 +283,7 @@ export const CalculatorsHub: React.FC = () => {
                 )}
               </div>
 
-              {/* DBR Percentage & Needle Bar */}
+              {/* DBR Percentage & Bar */}
               {dbrResult && (
                 <div className="mt-5 space-y-4">
                   <div className="text-center">
@@ -316,7 +304,7 @@ export const CalculatorsHub: React.FC = () => {
 
                   {/* Horizontal Gauge Bar */}
                   <div className="space-y-1.5">
-                    <div className="h-3 w-full bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                    <div className="h-3 w-full bg-[#0a0f1d] rounded-full overflow-hidden p-0.5 border border-slate-800">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${
                           dbrResult.dbr_percent <= 40
@@ -336,7 +324,7 @@ export const CalculatorsHub: React.FC = () => {
                   </div>
 
                   {/* Metrics Table */}
-                  <div className="space-y-2 pt-3 border-t border-slate-800 text-xs">
+                  <div className="space-y-2.5 pt-3 border-t border-slate-800 text-xs">
                     <div className="flex justify-between">
                       <span className="text-slate-400">Total Monthly Debt Commitment:</span>
                       <span className="text-white font-mono font-bold">
@@ -372,8 +360,8 @@ export const CalculatorsHub: React.FC = () => {
               )}
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[11px] text-slate-400 leading-relaxed">
-              <strong className="text-slate-200">Statutory Standard:</strong> {dbrResult?.statutory_citation}
+            <div className="p-3.5 rounded-2xl bg-[#0a0f1d] border border-slate-800/90 text-[11px] text-slate-400 leading-relaxed">
+              <strong className="text-slate-200">Statutory Rule:</strong> {dbrResult?.statutory_citation}
             </div>
           </div>
 
@@ -381,37 +369,37 @@ export const CalculatorsHub: React.FC = () => {
       )}
 
       {/* ============================================================== */}
-      {/* 2. EARLY SETTLEMENT OVERCHARGE CALCULATOR */}
+      {/* 2. EARLY SETTLEMENT OVERCHARGE CALCULATOR (CLEAN FINTECH - NO RAW DEMAND LETTER) */}
       {/* ============================================================== */}
       {activeCalc === 'settlement' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in duration-200">
           
           {/* Inputs (6 cols) */}
-          <div className="lg:col-span-6 rounded-2xl bg-slate-900/50 border border-slate-800 p-6 space-y-4">
-            <div className="border-b border-slate-800 pb-3">
+          <div className="lg:col-span-6 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 p-6 space-y-4">
+            <div className="border-b border-slate-800/80 pb-3">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-amber-400" />
-                Early Payoff Balance & Fee Parameters
+                Loan Early Payoff Balance & Fee Parameters
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                CBUAE Notice 3877/2019 & Circular 8/2020 Art 4.3 (1% or AED 10,000 cap).
+                Evaluates prepayment exit fees against CBUAE Notice 3877/2019 & Circular 8/2020 Art 4.3.
               </p>
             </div>
 
-            <div className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Outstanding Balance at Payoff (AED)</label>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-300">Outstanding Loan Principal at Payoff (AED)</label>
                 <input
                   type="number"
                   min="1000"
                   step="10000"
                   value={principal}
                   onChange={(e) => setPrincipal(Math.max(1, parseFloat(e.target.value) || 0))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-300">Early Settlement Fee Charged by Bank (AED)</label>
                 <input
                   type="number"
@@ -419,92 +407,107 @@ export const CalculatorsHub: React.FC = () => {
                   step="500"
                   value={chargedFee}
                   onChange={(e) => setChargedFee(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-300">Borrower Full Name</label>
-                  <input
-                    type="text"
-                    value={borrowerName}
-                    onChange={(e) => setBorrowerName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
+              <div className="grid grid-cols-2 gap-3 pt-1">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-300">Lending Institution</label>
                   <input
                     type="text"
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-300">Loan Account Reference #</label>
+                  <input
+                    type="text"
+                    value={accountNo}
+                    onChange={(e) => setAccountNo(e.target.value)}
+                    className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Loan Facility Reference #</label>
-                <input
-                  type="text"
-                  value={accountNo}
-                  onChange={(e) => setAccountNo(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
-                />
-              </div>
             </div>
-
-            {/* Statutory Result Card */}
-            {settlementResult && (
-              <div
-                className={`p-4 rounded-xl border mt-4 ${
-                  settlementResult.is_compliant
-                    ? 'bg-emerald-950/20 border-emerald-900/40 text-emerald-300'
-                    : 'bg-rose-950/20 border-rose-900/40 text-rose-300'
-                }`}
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span>Permissible Statutory Cap:</span>
-                  <span className="font-mono font-bold text-white">
-                    AED {settlementResult.statutory_cap_amount_aed.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs mt-1">
-                  <span>Refund Due to Customer:</span>
-                  <span className="font-mono font-extrabold text-amber-400 text-sm">
-                    AED {settlementResult.refund_due_aed.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Demand Letter Generator (6 cols) */}
-          <div className="lg:col-span-6 rounded-2xl bg-slate-900/50 border border-slate-800 p-6 flex flex-col justify-between space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div>
+          {/* Clean Financial Restitution Output (6 cols - NO DEMAND LETTER) */}
+          <div className="lg:col-span-6 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 p-6 flex flex-col justify-between space-y-5">
+            <div>
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                 <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                  <FileCheck className="h-4 w-4 text-emerald-400" />
-                  Statutory Restitution Demand Letter
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  Statutory Fee Analysis & Refund Determination
                 </h2>
-                <p className="text-[11px] text-slate-400">CBUAE Sanadak escalation notice ready to dispatch</p>
+                {settlementResult && (
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                      settlementResult.is_compliant
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    }`}
+                  >
+                    {settlementResult.is_compliant ? 'COMPLIANT FEE' : 'UNLAWFUL OVERCHARGE'}
+                  </span>
+                )}
               </div>
-              <button
-                onClick={copyDemandLetter}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-all shadow-md cursor-pointer"
-              >
-                {copiedDemand ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                <span>{copiedDemand ? 'Copied' : 'Copy Notice'}</span>
-              </button>
+
+              {settlementResult && (
+                <div className="mt-5 space-y-4">
+                  
+                  {/* Restitution Due Hero Card */}
+                  <div
+                    className={`p-5 rounded-2xl border ${
+                      settlementResult.is_compliant
+                        ? 'bg-emerald-950/20 border-emerald-900/40'
+                        : 'bg-rose-950/20 border-rose-900/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-300">
+                        {settlementResult.is_compliant ? 'Fee Complies with CBUAE Cap' : 'Customer Restitution Refund Due'}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">Notice 3877/2019</span>
+                    </div>
+                    <div className="text-3xl font-mono font-extrabold text-amber-400 mt-2">
+                      AED {settlementResult.refund_due_aed.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      {settlementResult.is_compliant
+                        ? 'The fee debited by the bank is within the statutory ceiling.'
+                        : 'Unlawful excess fee debited above statutory cap of lower of 1% or AED 10,000.'}
+                    </p>
+                  </div>
+
+                  {/* Financial Breakdown */}
+                  <div className="space-y-2.5 text-xs">
+                    <div className="flex justify-between py-1 border-b border-slate-800/80">
+                      <span className="text-slate-400">Total Outstanding Principal:</span>
+                      <span className="text-white font-mono font-bold">AED {settlementResult.outstanding_principal_aed.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-800/80">
+                      <span className="text-slate-400">Exit Fee Debited by Bank:</span>
+                      <span className="text-rose-400 font-mono font-bold">AED {settlementResult.charged_fee_amount_aed.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-800/80">
+                      <span className="text-slate-400">CBUAE Maximum Statutory Cap:</span>
+                      <span className="text-emerald-400 font-mono font-bold">AED {settlementResult.statutory_cap_amount_aed.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-400">Net Refund Due:</span>
+                      <span className="text-amber-400 font-mono font-extrabold text-sm">AED {settlementResult.refund_due_aed.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                </div>
+              )}
             </div>
 
-            <div className="flex-1 bg-slate-950 rounded-xl border border-slate-800 p-4 font-mono text-[11px] text-slate-300 overflow-y-auto max-h-[380px] leading-relaxed whitespace-pre-wrap select-all">
-              {settlementResult?.formal_demand_letter}
-            </div>
-
-            <div className="text-[10px] text-slate-500 italic">
-              Note: This formal notice references CBUAE Consumer Protection Regulation Circular 8/2020 Art 4.3.
+            <div className="p-3.5 rounded-2xl bg-[#0a0f1d] border border-slate-800/90 text-[11px] text-slate-400 leading-relaxed">
+              <strong className="text-slate-200">Governing Standard:</strong> {settlementResult?.rule_cited}
             </div>
           </div>
 
@@ -518,10 +521,10 @@ export const CalculatorsHub: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in duration-200">
           
           {/* Inputs (7 cols) */}
-          <div className="lg:col-span-7 rounded-2xl bg-slate-900/50 border border-slate-800 p-6 space-y-5">
-            <div className="border-b border-slate-800 pb-3">
+          <div className="lg:col-span-7 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 p-6 space-y-5">
+            <div className="border-b border-slate-800/80 pb-3">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Building className="h-4 w-4 text-teal-400" />
+                <Building className="h-4 w-4 text-cyan-400" />
                 Residential Mortgage Property Parameters
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -533,7 +536,7 @@ export const CalculatorsHub: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-300 flex justify-between">
                   <span>Property Purchase Valuation (AED)</span>
-                  <span className="text-emerald-400 font-mono font-bold">AED {propertyVal.toLocaleString()}</span>
+                  <span className="text-cyan-400 font-mono font-bold">AED {propertyVal.toLocaleString()}</span>
                 </label>
                 <input
                   type="number"
@@ -541,7 +544,7 @@ export const CalculatorsHub: React.FC = () => {
                   step="100000"
                   value={propertyVal}
                   onChange={(e) => setPropertyVal(Math.max(1, parseFloat(e.target.value) || 0))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#0a0f1d] border border-slate-800/90 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -554,10 +557,10 @@ export const CalculatorsHub: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsUaeNational(true)}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                      className={`p-2.5 rounded-2xl border text-xs font-semibold transition-all cursor-pointer ${
                         isUaeNational
-                          ? 'bg-emerald-600 text-white border-emerald-500'
-                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                          ? 'bg-cyan-600 text-white border-cyan-500'
+                          : 'bg-[#0a0f1d] text-slate-400 border-slate-800 hover:text-white'
                       }`}
                     >
                       UAE National
@@ -565,10 +568,10 @@ export const CalculatorsHub: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsUaeNational(false)}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                      className={`p-2.5 rounded-2xl border text-xs font-semibold transition-all cursor-pointer ${
                         !isUaeNational
-                          ? 'bg-emerald-600 text-white border-emerald-500'
-                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                          ? 'bg-cyan-600 text-white border-cyan-500'
+                          : 'bg-[#0a0f1d] text-slate-400 border-slate-800 hover:text-white'
                       }`}
                     >
                       Expatriate
@@ -583,10 +586,10 @@ export const CalculatorsHub: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsFirstHome(true)}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                      className={`p-2.5 rounded-2xl border text-xs font-semibold transition-all cursor-pointer ${
                         isFirstHome
-                          ? 'bg-emerald-600 text-white border-emerald-500'
-                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                          ? 'bg-cyan-600 text-white border-cyan-500'
+                          : 'bg-[#0a0f1d] text-slate-400 border-slate-800 hover:text-white'
                       }`}
                     >
                       First Home
@@ -594,10 +597,10 @@ export const CalculatorsHub: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsFirstHome(false)}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                      className={`p-2.5 rounded-2xl border text-xs font-semibold transition-all cursor-pointer ${
                         !isFirstHome
-                          ? 'bg-emerald-600 text-white border-emerald-500'
-                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                          ? 'bg-cyan-600 text-white border-cyan-500'
+                          : 'bg-[#0a0f1d] text-slate-400 border-slate-800 hover:text-white'
                       }`}
                     >
                       Second / Invest
@@ -608,7 +611,7 @@ export const CalculatorsHub: React.FC = () => {
               </div>
 
               {/* Off-plan checkbox */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#0a0f1d] border border-slate-800/90">
                 <div>
                   <div className="text-xs font-medium text-white">Under-Construction / Off-Plan Unit</div>
                   <div className="text-[10px] text-slate-400">Subject to statutory 50% LTV cap across all categories</div>
@@ -617,7 +620,7 @@ export const CalculatorsHub: React.FC = () => {
                   type="button"
                   onClick={() => setIsOffPlan(!isOffPlan)}
                   className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isOffPlan ? 'bg-emerald-600' : 'bg-slate-700'
+                    isOffPlan ? 'bg-cyan-500' : 'bg-slate-700'
                   }`}
                 >
                   <span
@@ -632,12 +635,12 @@ export const CalculatorsHub: React.FC = () => {
           </div>
 
           {/* Mortgage Output (5 cols) */}
-          <div className="lg:col-span-5 rounded-2xl bg-slate-900/50 border border-slate-800 p-6 flex flex-col justify-between space-y-5">
+          <div className="lg:col-span-5 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 p-6 flex flex-col justify-between space-y-5">
             <div>
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                 <h2 className="text-sm font-bold text-white">Mortgage Financing Ceiling</h2>
                 {mortgageResult && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                     Max LTV: {mortgageResult.max_ltv_percent}%
                   </span>
                 )}
@@ -647,7 +650,7 @@ export const CalculatorsHub: React.FC = () => {
                 <div className="mt-5 space-y-4">
                   
                   {/* Maximum Bank Financing */}
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <div className="p-4 rounded-2xl bg-[#0a0f1d] border border-slate-800/90">
                     <div className="text-[10px] uppercase font-semibold text-slate-400">
                       Maximum Allowable Bank Loan
                     </div>
@@ -660,7 +663,7 @@ export const CalculatorsHub: React.FC = () => {
                   </div>
 
                   {/* Minimum Required Downpayment */}
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <div className="p-4 rounded-2xl bg-[#0a0f1d] border border-slate-800/90">
                     <div className="text-[10px] uppercase font-semibold text-slate-400">
                       Minimum Required Borrower Equity (Downpayment)
                     </div>
@@ -673,7 +676,7 @@ export const CalculatorsHub: React.FC = () => {
                   </div>
 
                   {/* Tenure Cap */}
-                  <div className="flex justify-between text-xs pt-2 border-t border-slate-800">
+                  <div className="flex justify-between text-xs pt-2 border-t border-slate-800/80">
                     <span className="text-slate-400">Maximum Statutory Tenure:</span>
                     <span className="text-white font-mono font-bold">25 Years (300 Months)</span>
                   </div>
@@ -682,7 +685,7 @@ export const CalculatorsHub: React.FC = () => {
               )}
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[11px] text-slate-400 leading-relaxed">
+            <div className="p-3.5 rounded-2xl bg-[#0a0f1d] border border-slate-800/90 text-[11px] text-slate-400 leading-relaxed">
               <strong className="text-slate-200">Statutory Standard:</strong> {mortgageResult?.regulatory_rule}
             </div>
           </div>

@@ -413,9 +413,17 @@ def list_regulatory_corpus():
     if retriever and retriever.documents:
         for idx, doc in enumerate(retriever.documents):
             meta = doc.metadata or {}
+            raw_ref = meta.get("circular_ref", "CBUAE Regulatory Gazette")
+            if "cbuae_standardized" in raw_ref.lower() or "fee_schedule" in raw_ref.lower():
+                clean_ref = "CBUAE Standardized Retail Fee Schedule"
+            elif raw_ref.endswith(".md"):
+                clean_ref = raw_ref.replace(".md", "").replace("_", " ").title()
+            else:
+                clean_ref = raw_ref
+
             items.append({
                 "id": meta.get("chunk_id", f"reg_{idx}"),
-                "circular_ref": meta.get("circular_ref", "CBUAE Regulatory Gazette"),
+                "circular_ref": clean_ref,
                 "article_header": meta.get("article_header", "Statutory Rule"),
                 "content_preview": doc.page_content[:240] + ("..." if len(doc.page_content) > 240 else ""),
                 "full_content": doc.page_content,

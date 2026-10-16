@@ -10,6 +10,14 @@ import {
 import { searchCodex, fetchRegulations } from '../services/api';
 import type { SearchResponse, RegulationDocument } from '../types';
 
+const formatRef = (ref: string) => {
+  if (!ref) return 'CBUAE Regulation';
+  if (ref.toLowerCase().includes('fee_schedule') || ref.toLowerCase().includes('cbuae_standardized')) {
+    return 'CBUAE Standardized Retail Fee Schedule';
+  }
+  return ref.replace(/\.md$/i, '').replace(/_/g, ' ');
+};
+
 export const RegulatoryCodex: React.FC = () => {
   const [query, setQuery] = useState<string>('What is the statutory cap on early settlement prepayment fees?');
   const [isSearching, setIsSearching] = useState<boolean>(false);
@@ -185,7 +193,7 @@ export const RegulatoryCodex: React.FC = () => {
                 {searchResult.retrieved_chunks.map((chunk, idx) => (
                   <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
                     <div className="flex items-center justify-between text-[10px]">
-                      <span className="font-semibold text-emerald-400">{chunk.circular_ref}</span>
+                      <span className="font-semibold text-emerald-400">{formatRef(chunk.circular_ref)}</span>
                       <span className="font-mono text-slate-500">RRF: {chunk.rrf_score}</span>
                     </div>
                     <div className="font-bold text-white text-[11px] line-clamp-1">
@@ -241,7 +249,7 @@ export const RegulatoryCodex: React.FC = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                    <span className="font-semibold text-emerald-400">{doc.circular_ref}</span>
+                    <span className="font-semibold text-emerald-400">{formatRef(doc.circular_ref)}</span>
                     <span className="font-mono text-slate-500">{doc.token_count} words</span>
                   </div>
                   <h3 className="text-xs font-bold text-white line-clamp-1">{doc.article_header}</h3>
@@ -259,7 +267,7 @@ export const RegulatoryCodex: React.FC = () => {
               <div className="space-y-4">
                 <div className="border-b border-slate-800 pb-3">
                   <div className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-2">
-                    {selectedDoc.circular_ref}
+                    {formatRef(selectedDoc.circular_ref)}
                   </div>
                   <h3 className="text-base font-bold text-white">
                     {selectedDoc.article_header}

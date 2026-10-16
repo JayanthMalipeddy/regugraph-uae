@@ -23,10 +23,16 @@ def extract_sections_and_tables(markdown_text: str, filename: str) -> List[Docum
     
     # Identify circular title/ref
     title_match = re.search(r"^#\s+(.+)$", markdown_text, re.MULTILINE)
-    doc_title = title_match.group(1).strip() if title_match else filename
+    clean_fallback_title = filename.replace(".md", "").replace("_", " ").title()
+    doc_title = title_match.group(1).strip() if title_match else clean_fallback_title
     
-    circular_match = re.search(r"(Circular No\.\s*[\w/]+|Notice No\.\s*[\w/]+)", markdown_text, re.IGNORECASE)
-    circular_ref = circular_match.group(1).strip() if circular_match else filename
+    circular_match = re.search(r"(Circular No\.\s*[\w/]+|Notice No\.\s*[\w/]+|Circular\s*[\w/]+)", markdown_text, re.IGNORECASE)
+    if circular_match:
+        circular_ref = circular_match.group(1).strip()
+    elif "fee_schedule" in filename.lower():
+        circular_ref = "CBUAE Standardized Retail Fee Schedule"
+    else:
+        circular_ref = clean_fallback_title
 
     # Split semantically by Article, Section 4.x, or Standardized Schedule
     sections = re.split(r"\n(?=#{2,3}\s+Article|#{2,3}\s+Standardized|#{3,4}\s+Section\s+4\.)", markdown_text)

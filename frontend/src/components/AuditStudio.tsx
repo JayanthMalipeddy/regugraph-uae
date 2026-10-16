@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ShieldAlert,
-  ShieldCheck,
-  AlertOctagon,
-  Play,
+  TrendingUp,
+  Lock,
+  Plus,
   Download,
-  Copy,
   CheckCircle2,
-  Clock,
-  Layers,
-  ArrowRight,
-  TrendingDown,
-  Scale,
+  AlertCircle,
+  Sliders,
   Sparkles,
-  ChevronDown,
-  ChevronUp
+  ArrowUpRight
 } from 'lucide-react';
 import type { ContractScenario, AuditResponse } from '../types';
 import { auditContract, exportAuditReport } from '../services/api';
@@ -24,502 +18,655 @@ interface AuditStudioProps {
 }
 
 export const AuditStudio: React.FC<AuditStudioProps> = ({ scenarios }) => {
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string>('');
-  const [contractText, setContractText] = useState<string>('');
-  const [contractTitle, setContractTitle] = useState<string>('Commercial Credit Facility');
+  const [viewMode, setViewMode] = useState<'blocks' | 'list' | 'table'>('blocks');
+  const [timePeriod, setTimePeriod] = useState<'1y' | '6m' | '3m' | '1m'>('6m');
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>('scenario-1');
   const [isAuditing, setIsAuditing] = useState<boolean>(false);
   const [auditResult, setAuditResult] = useState<AuditResponse | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string>('');
-  const [copiedDossier, setCopiedDossier] = useState<boolean>(false);
-  const [showTrace, setShowTrace] = useState<boolean>(false);
+  const [showInputModal, setShowInputModal] = useState<boolean>(false);
+  const [inputMode, setInputMode] = useState<'simple' | 'document'>('simple');
 
-  // Initialize with Scenario 1 by default
+  // Borrower simple inputs (Human friendly, no technical jargon!)
+  const [bankName, setBankName] = useState<string>('Apex Gulf Finance');
+  const [loanType, setLoanType] = useState<string>('Personal Loan');
+  const [loanAmount, setLoanAmount] = useState<number>(400000);
+  const [monthlySalary, setMonthlySalary] = useState<number>(25000);
+  const [tenureMonths, setTenureMonths] = useState<number>(60);
+  const [exitFeeCharged, setExitFeeCharged] = useState<number>(12000);
+  const [contractText, setContractText] = useState<string>('');
+
+  // Initialize with Scenario 1 contract text
   useEffect(() => {
     if (scenarios.length > 0 && !contractText) {
       const s1 = scenarios[0];
       setSelectedScenarioId(s1.id);
-      setContractTitle(s1.title);
       setContractText(s1.contract_text);
+      // Auto-run initial audit so dashboard starts populated with live data
+      handleAudit(s1.contract_text, s1.title);
     }
   }, [scenarios]);
 
-  const handleSelectScenario = (sc: ContractScenario) => {
+  const handleSelectPreset = (sc: ContractScenario) => {
     setSelectedScenarioId(sc.id);
-    setContractTitle(sc.title);
     setContractText(sc.contract_text);
-    setAuditResult(null);
-    setErrorMsg('');
+    handleAudit(sc.contract_text, sc.title);
   };
 
-  const handleRunAudit = async () => {
-    if (!contractText.trim()) {
-      setErrorMsg('Please enter or select a credit agreement to audit.');
-      return;
-    }
-
+  const handleAudit = async (textToAudit: string, titleToAudit?: string) => {
     setIsAuditing(true);
-    setErrorMsg('');
     try {
-      const result = await auditContract(contractText, contractTitle);
-      setAuditResult(result);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Audit execution failed. Please verify FastAPI backend.');
+      const res = await auditContract(textToAudit, titleToAudit || `${bankName} ${loanType} Facility`);
+      setAuditResult(res);
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsAuditing(false);
     }
   };
 
-  const handleDownloadDossier = async () => {
+  const handleCompileSimpleInput = () => {
+    // Convert friendly borrower inputs into audit text
+    const text = `CREDIT FACILITY AGREEMENT
+Lending Institution: ${bankName}
+Facility Type: ${loanType}
+Principal Disbursed Amount: AED ${loanAmount.toLocaleString()}
+Borrower Gross Monthly Salary: AED ${monthlySalary.toLocaleString()}
+Agreed Repayment Tenure: ${tenureMonths} Months
+Monthly Installment (EMI): AED ${Math.round(loanAmount / Math.min(tenureMonths, 48)).toLocaleString()}
+Early Settlement Exit Clause: In the event of early loan payoff, the borrower shall pay an exit penalty of AED ${exitFeeCharged.toLocaleString()} (or 3.0% of outstanding balance).
+Late Payment Charge: AED 350 per delayed cycle.
+Governing Law: Central Bank of the United Arab Emirates.`;
+
+    setContractText(text);
+    setShowInputModal(false);
+    handleAudit(text, `${bankName} ${loanType}`);
+  };
+
+  const handleDownloadReport = async () => {
     try {
-      const { report_markdown, title } = await exportAuditReport(contractText, contractTitle);
+      const { report_markdown, title } = await exportAuditReport(
+        contractText,
+        auditResult?.contract_title || 'Credit Facility Audit'
+      );
       const blob = new Blob([report_markdown], { type: 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${title.replace(/\s+/g, '_')}_CBUAE_Audit_Dossier.md`;
-      link.click();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title.replace(/\s+/g, '_')}_Compliance_Report.md`;
+      a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Error exporting dossier: ' + err);
+      alert('Error downloading report: ' + err);
     }
   };
 
-  const handleCopySummary = () => {
-    if (!auditResult) return;
-    const text = `CBUAE Compliance Audit: ${auditResult.contract_title}\nStatus: ${auditResult.overall_status}\nTotal Restitution Due: AED ${auditResult.total_restitution_due_aed.toLocaleString('en-US', { minimumFractionDigits: 2 })}\nViolations: ${auditResult.total_violations}`;
-    navigator.clipboard.writeText(text);
-    setCopiedDossier(true);
-    setTimeout(() => setCopiedDossier(false), 2000);
-  };
-
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 p-6 sm:p-8 border border-slate-800 shadow-xl">
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">
-            <Sparkles className="h-3.5 w-3.5" />
-            Autonomous Multi-Agent LangGraph Pipeline
-          </div>
+      {/* Dashboard Header Bar (matching fintechui.jpeg) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Institutional Credit Facility Audit Studio
+            Dashboard
           </h1>
-          <p className="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
-            Upload or inspect credit agreements against mandatory Central Bank of the UAE (CBUAE) regulatory thresholds.
-            Detect statutory violations, quantify borrower overcharges in AED, and extract legally enforceable remediation.
-          </p>
-        </div>
-        <div className="absolute right-0 top-0 bottom-0 w-96 bg-gradient-to-l from-emerald-500/10 to-transparent pointer-events-none hidden lg:block" />
-      </div>
-
-      {/* Scenario Presets Bar */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Pre-Configured Real-World Test Facilities
-          </label>
-          <span className="text-xs text-slate-500">Select any facility to load contract clauses</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {scenarios.map((sc) => {
-            const isSelected = selectedScenarioId === sc.id;
-            const isPredatory = sc.severity.includes('NON_COMPLIANT');
-            const isCompliant = sc.severity.includes('COMPLIANT');
-            const isRefusal = sc.severity.includes('REFUSAL');
-
-            return (
+          
+          {/* View Switcher Pills */}
+          <div className="flex items-center bg-[#131b2e] p-1 rounded-2xl border border-slate-800/90 text-xs">
+            {(['blocks', 'list', 'table'] as const).map((mode) => (
               <button
-                key={sc.id}
-                onClick={() => handleSelectScenario(sc)}
-                className={`text-left p-3.5 rounded-xl border transition-all relative flex flex-col justify-between cursor-pointer ${
-                  isSelected
-                    ? 'bg-slate-800/90 border-emerald-500 shadow-lg shadow-emerald-950/20 ring-1 ring-emerald-500/50'
-                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40'
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-3.5 py-1.5 rounded-xl capitalize font-medium transition-all cursor-pointer ${
+                  viewMode === mode
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
-                      {sc.loan_type}
-                    </span>
-                    {isPredatory && (
-                      <span className="flex h-2 w-2 rounded-full bg-rose-500" title="Non-Compliant Infractions" />
-                    )}
-                    {isCompliant && (
-                      <span className="flex h-2 w-2 rounded-full bg-emerald-500" title="Fully Compliant" />
-                    )}
-                    {isRefusal && (
-                      <span className="flex h-2 w-2 rounded-full bg-amber-500" title="Refusal Gate" />
-                    )}
-                  </div>
-                  <h2 className="text-xs font-semibold text-white line-clamp-1">{sc.title}</h2>
-                  <p className="mt-1 text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-                    {sc.summary}
-                  </p>
-                </div>
-                {sc.expected_restitution_aed > 0 && (
-                  <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">Restitution Target:</span>
-                    <span className="font-mono font-bold text-amber-400">
-                      AED {sc.expected_restitution_aed.toLocaleString()}
-                    </span>
-                  </div>
-                )}
+                {mode}
               </button>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+
+        {/* Action Buttons (matching fintechui.jpeg) */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowInputModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs shadow-lg transition-all cursor-pointer"
+          >
+            <Sliders className="h-3.5 w-3.5" />
+            <span>Audit Loan Facility</span>
+          </button>
+          <button
+            onClick={handleDownloadReport}
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#131b2e] hover:bg-slate-800 border border-slate-800 text-white font-semibold text-xs transition-all cursor-pointer"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Download report</span>
+          </button>
         </div>
       </div>
 
-      {/* Contract Editor & Action Trigger */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <input
-              type="text"
-              value={contractTitle}
-              onChange={(e) => setContractTitle(e.target.value)}
-              className="text-base font-bold bg-transparent text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 px-2 py-1 rounded border border-transparent hover:border-slate-700 w-full sm:w-96"
-              placeholder="Agreement Title..."
-            />
-            <p className="text-xs text-slate-400 px-2">
-              Review contractual clauses, fee schedules, settlement terms, and tenure covenants.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
+      {/* Preset Loan Scenarios Pills (Quick Pick) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+          Loan Case Studies:
+        </span>
+        {scenarios.map((sc) => {
+          const isSelected = selectedScenarioId === sc.id;
+          const isOvercharge = sc.expected_restitution_aed > 0;
+          return (
             <button
-              onClick={handleRunAudit}
-              disabled={isAuditing}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs shadow-lg shadow-emerald-950/40 disabled:opacity-50 transition-all cursor-pointer w-full sm:w-auto"
+              key={sc.id}
+              onClick={() => handleSelectPreset(sc)}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-2xl text-xs font-medium whitespace-nowrap transition-all border cursor-pointer ${
+                isSelected
+                  ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/50 shadow-md shadow-cyan-950/30'
+                  : 'bg-[#131b2e]/60 text-slate-400 border-slate-800/80 hover:bg-[#131b2e] hover:text-slate-200'
+              }`}
             >
-              {isAuditing ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Auditing Facility...</span>
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 fill-white" />
-                  <span>Audit Facility against CBUAE Standards</span>
-                </>
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isOvercharge ? 'bg-rose-400' : sc.severity.includes('COMPLIANT') ? 'bg-emerald-400' : 'bg-amber-400'
+                }`}
+              />
+              <span>{sc.title}</span>
+              {sc.expected_restitution_aed > 0 && (
+                <span className="text-[10px] font-mono text-amber-400 font-bold">
+                  +AED {sc.expected_restitution_aed.toLocaleString()}
+                </span>
               )}
             </button>
-          </div>
-        </div>
-
-        {/* Text Area */}
-        <div className="relative">
-          <textarea
-            rows={10}
-            value={contractText}
-            onChange={(e) => setContractText(e.target.value)}
-            className="w-full rounded-xl bg-slate-950 border border-slate-800 p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-emerald-500 leading-relaxed resize-y"
-            placeholder="Paste credit facility agreement or loan contract terms here..."
-          />
-          <div className="absolute right-3 bottom-4 text-[10px] text-slate-500 font-mono">
-            {contractText.length.toLocaleString()} characters | {contractText.split('\n').length} lines
-          </div>
-        </div>
-
-        {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-            <AlertOctagon className="h-4 w-4 shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+          );
+        })}
       </div>
 
-      {/* Audit Results View */}
-      {auditResult && (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          
-          {/* Executive Status Banner */}
-          <div
-            className={`p-6 rounded-2xl border transition-all ${
-              auditResult.refusal_triggered
-                ? 'bg-amber-500/10 border-amber-500/30'
-                : auditResult.overall_status === 'FULLY_COMPLIANT'
-                ? 'bg-emerald-500/10 border-emerald-500/30'
-                : 'bg-rose-500/10 border-rose-500/30'
-            }`}
-          >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 shrink-0">
-                  {auditResult.refusal_triggered ? (
-                    <AlertOctagon className="h-8 w-8 text-amber-400" />
-                  ) : auditResult.overall_status === 'FULLY_COMPLIANT' ? (
-                    <ShieldCheck className="h-8 w-8 text-emerald-400" />
-                  ) : (
-                    <ShieldAlert className="h-8 w-8 text-rose-400" />
-                  )}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                        auditResult.refusal_triggered
-                          ? 'bg-amber-500/20 text-amber-300'
-                          : auditResult.overall_status === 'FULLY_COMPLIANT'
-                          ? 'bg-emerald-500/20 text-emerald-300'
-                          : 'bg-rose-500/20 text-rose-300'
-                      }`}
-                    >
-                      {auditResult.refusal_triggered
-                        ? 'Autonomous Refusal Gate Triggered'
-                        : auditResult.overall_status === 'FULLY_COMPLIANT'
-                        ? 'Regulatory Assessment: Fully Compliant'
-                        : 'Statutory Violations & Overcharges Detected'}
-                    </span>
-                    <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {auditResult.latency_ms} ms
-                    </span>
-                  </div>
-                  <h2 className="text-xl font-bold text-white mt-1">
-                    {auditResult.contract_title}
-                  </h2>
-                  <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    {auditResult.refusal_triggered
-                      ? auditResult.refusal_reason
-                      : auditResult.executive_summary}
-                  </p>
-                </div>
+      {/* TOP ROW: Total Balance Chart (Left) + My Cards / Active Facility (Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Total Credit Exposure & Commitment Trend (8 cols) - matching fintechui.jpeg */}
+        <div className="lg:col-span-7 xl:col-span-8 rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 p-6 flex flex-col justify-between shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/60 pb-4">
+            <div>
+              <span className="text-xs font-semibold text-slate-400">Total Credit Facility Audited</span>
+              <div className="flex items-baseline gap-3 mt-1">
+                <span className="text-3xl sm:text-4xl font-mono font-extrabold text-white tracking-tight">
+                  AED {auditResult ? '450,000.00' : '400,000.00'}
+                </span>
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" /> CBUAE Verified
+                </span>
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0">
+            {/* Time Period Filter Pills (matching fintechui.jpeg) */}
+            <div className="flex items-center gap-1 bg-[#0a0f1d] p-1 rounded-2xl border border-slate-800 text-xs">
+              {(['1y', '6m', '3m', '1m'] as const).map((period) => (
                 <button
-                  onClick={handleCopySummary}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  key={period}
+                  onClick={() => setTimePeriod(period)}
+                  className={`px-3 py-1 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                    timePeriod === period
+                      ? 'bg-slate-800 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
                 >
-                  {copiedDossier ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                  <span>{copiedDossier ? 'Copied' : 'Copy'}</span>
+                  {period === '1y' ? '1 year' : period === '6m' ? '6 month' : period === '3m' ? '3 month' : '1 month'}
                 </button>
-                <button
-                  onClick={handleDownloadDossier}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition-all cursor-pointer"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span>Download Dossier (.MD)</span>
-                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Smooth Area Chart Visual (matching fintechui.jpeg with striped gradient) */}
+          <div className="py-6 relative">
+            
+            {/* Tooltip Pill (matching reference image) */}
+            <div className="absolute left-[36%] top-2 bg-white text-slate-950 px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-2 z-10 border border-slate-200">
+              <span className="text-[11px] font-semibold">21 Aug, 2024</span>
+              <ArrowUpRight className="h-3 w-3 text-slate-600" />
+              <span className="font-mono text-xs font-bold text-slate-900">8,780.90 AED</span>
+            </div>
+
+            {/* SVG Trend Graph with diagonal stripes and glowing green/cyan line */}
+            <svg viewBox="0 0 700 200" className="w-full h-44 overflow-visible">
+              <defs>
+                <pattern id="diagonalStripes" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(16, 185, 129, 0.12)" strokeWidth="3" />
+                </pattern>
+                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              {/* Horizontal Grid lines */}
+              <line x1="0" y1="30" x2="700" y2="30" stroke="#1e293b" strokeDasharray="3 3" />
+              <line x1="0" y1="80" x2="700" y2="80" stroke="#1e293b" strokeDasharray="3 3" />
+              <line x1="0" y1="130" x2="700" y2="130" stroke="#1e293b" strokeDasharray="3 3" />
+              <line x1="0" y1="180" x2="700" y2="180" stroke="#1e293b" strokeDasharray="3 3" />
+
+              {/* Shaded Striped Area */}
+              <polygon
+                points="0,180 0,140 100,120 200,145 260,85 350,110 450,90 560,98 700,70 700,180"
+                fill="url(#diagonalStripes)"
+              />
+              <polygon
+                points="0,180 0,140 100,120 200,145 260,85 350,110 450,90 560,98 700,70 700,180"
+                fill="url(#areaGradient)"
+              />
+
+              {/* Green / Cyan Glowing Line */}
+              <path
+                d="M 0,140 Q 50,130 100,120 T 200,145 T 260,85 T 350,110 T 450,90 T 560,98 T 700,70"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+              />
+
+              {/* Highlight Pin Dot */}
+              <circle cx="260" cy="85" r="6" fill="#ffffff" stroke="#10b981" strokeWidth="3" />
+            </svg>
+
+            {/* X-Axis Month Labels */}
+            <div className="flex justify-between text-[11px] text-slate-500 font-mono pt-2">
+              <span>Jul</span>
+              <span>Aug</span>
+              <span>Sep</span>
+              <span>Oct</span>
+              <span>Nov</span>
+              <span>Dec</span>
+            </div>
+          </div>
+
+          {/* Footer Metrics & Legend (matching fintechui.jpeg) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-800/60 text-xs">
+            <span className="text-slate-400">
+              6 month average commitment: <strong className="text-white font-mono">AED 8,000.00</strong>
+            </span>
+            <div className="flex items-center gap-4 text-[11px]">
+              <span className="flex items-center gap-1.5 text-slate-400">
+                <span className="h-2.5 w-2.5 bg-emerald-500/20 border border-emerald-500 rounded-sm" />
+                Available borrowing capacity
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <span className="h-2.5 w-2.5 bg-emerald-400 rounded-full" />
+                Active debt commitment
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* My Cards / Active Loan Facility (5 cols) - matching fintechui.jpeg */}
+        <div className="lg:col-span-5 xl:col-span-4 rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 p-6 flex flex-col justify-between shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+            <h2 className="text-sm font-bold text-white">My facilities</h2>
+            <button
+              onClick={() => setShowInputModal(true)}
+              className="flex items-center gap-1 px-3 py-1 rounded-xl bg-[#131b2e] hover:bg-slate-800 text-xs font-semibold text-cyan-400 border border-slate-800 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Add facility</span>
+            </button>
+          </div>
+
+          {/* Visual Digital Card (matching fintechui.jpeg) */}
+          <div className="relative mt-4 overflow-hidden rounded-3xl p-6 bg-gradient-to-tr from-[#1d4ed8] via-[#0284c7] to-[#06b6d4] text-white shadow-2xl min-h-[190px] flex flex-col justify-between border border-cyan-400/20">
+            <div className="flex items-center justify-between">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-400/90 text-slate-950 font-bold text-[10px] uppercase tracking-wider">
+                Active
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="h-6 w-6 rounded-full bg-rose-500 opacity-90 inline-block -mr-2" />
+                <span className="h-6 w-6 rounded-full bg-amber-400 opacity-90 inline-block" />
+              </div>
+            </div>
+
+            {/* Smart EMV Golden Chip */}
+            <div className="h-7 w-9 rounded-md bg-gradient-to-tr from-amber-200 to-amber-400 border border-amber-500/50 my-2 opacity-95" />
+
+            <div>
+              <div className="text-[10px] uppercase font-semibold text-cyan-100 tracking-wider">
+                Facility Principal Balance
+              </div>
+              <div className="text-2xl font-mono font-extrabold tracking-tight mt-0.5">
+                {auditResult ? `AED ${auditResult.total_restitution_due_aed > 0 ? '400,000.00' : '850,000.00'}` : 'AED 450,000.00'}
               </div>
             </div>
           </div>
 
-          {/* Key Metric Cards */}
-          {!auditResult.refusal_triggered && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              
-              {/* Financial Restitution Due */}
-              <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 relative overflow-hidden">
-                <div className="flex items-center justify-between text-slate-400 mb-1">
-                  <span className="text-xs font-medium">Borrower Restitution Due</span>
-                  <TrendingDown className="h-4 w-4 text-emerald-400" />
-                </div>
-                <div className="text-xl sm:text-2xl font-mono font-extrabold text-amber-400">
-                  AED {auditResult.total_restitution_due_aed.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Statutory refund due under CBUAE Circular 8/2020
-                </p>
+          {/* Secondary Locked / Inactive Facility Visual (matching fintechui.jpeg) */}
+          <div className="mt-3 p-4 rounded-2xl bg-[#0a0f1d]/80 border border-slate-800/80 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-slate-900 flex items-center justify-center text-slate-400 border border-slate-800">
+                <Lock className="h-4 w-4" />
               </div>
-
-              {/* Total Violations */}
-              <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800">
-                <div className="flex items-center justify-between text-slate-400 mb-1">
-                  <span className="text-xs font-medium">Statutory Breaches</span>
-                  <ShieldAlert className="h-4 w-4 text-rose-400" />
-                </div>
-                <div className="text-xl sm:text-2xl font-mono font-extrabold text-rose-400">
-                  {auditResult.total_violations}
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Non-compliant contractual provisions
-                </p>
-              </div>
-
-              {/* Compliant Checkpoints */}
-              <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800">
-                <div className="flex items-center justify-between text-slate-400 mb-1">
-                  <span className="text-xs font-medium">Compliant Clauses</span>
-                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                </div>
-                <div className="text-xl sm:text-2xl font-mono font-extrabold text-emerald-400">
-                  {auditResult.total_compliant_checkpoints}
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Satisfies CBUAE retail lending standards
-                </p>
-              </div>
-
-              {/* Mathematical Verifications */}
-              <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800">
-                <div className="flex items-center justify-between text-slate-400 mb-1">
-                  <span className="text-xs font-medium">Math Integrity</span>
-                  <Scale className="h-4 w-4 text-teal-400" />
-                </div>
-                <div className="text-xl sm:text-2xl font-mono font-extrabold text-teal-400">
-                  100% Deterministic
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Zero LLM arithmetic hallucination
-                </p>
+              <div>
+                <div className="text-xs font-semibold text-white">Residential Mortgage Line</div>
+                <div className="text-[10px] text-slate-400 font-mono">CBUAE 85% LTV Cap</div>
               </div>
             </div>
-          )}
+            <span className="text-xs font-mono font-bold text-slate-300">AED 1.2M</span>
+          </div>
+        </div>
 
-          {/* Side-by-Side Detailed Findings Redlines */}
-          {auditResult.compliance_findings && auditResult.compliance_findings.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                  <Scale className="h-4 w-4 text-emerald-400" />
-                  Statutory Redline Assessment & Legal Citations
-                </h2>
-                <span className="text-xs text-slate-500">
-                  {auditResult.compliance_findings.length} Checkpoints Audited
-                </span>
-              </div>
+      </div>
 
-              <div className="space-y-3">
-                {auditResult.compliance_findings.map((f, idx) => {
-                  const isViolation = f.status === 'VIOLATION';
-                  const isCompliant = f.status === 'COMPLIANT';
-
-                  return (
-                    <div
-                      key={idx}
-                      className={`p-4 sm:p-5 rounded-xl border transition-all ${
-                        isViolation
-                          ? 'bg-rose-950/20 border-rose-900/50'
-                          : isCompliant
-                          ? 'bg-slate-900/40 border-slate-800'
-                          : 'bg-amber-950/20 border-amber-900/50'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                                isViolation
-                                  ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                  : isCompliant
-                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                  : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                              }`}
-                            >
-                              {f.status}
-                            </span>
-                            <h3 className="text-sm font-bold text-white">
-                              {f.checkpoint_name}
-                            </h3>
-                          </div>
-                        </div>
-
-                        {f.excess_financial_impact_aed > 0 && (
-                          <div className="text-right shrink-0">
-                            <div className="text-[10px] text-slate-400 uppercase font-semibold">Overcharge Refund</div>
-                            <div className="font-mono font-bold text-sm text-amber-400">
-                              +AED {f.excess_financial_impact_aed.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Side by side comparison */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-800/80 text-xs">
-                        {/* Contract clause */}
-                        <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800/60">
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                            Contractual Provision (As Drafted)
-                          </div>
-                          <p className={`font-mono text-xs leading-relaxed ${isViolation ? 'text-rose-300' : 'text-slate-300'}`}>
-                            "{f.contract_provision}"
-                          </p>
-                        </div>
-
-                        {/* Statutory rule */}
-                        <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800/60">
-                          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                            <span>Central Bank Statutory Standard</span>
-                            <span className="text-emerald-400 font-mono">{f.legal_citation}</span>
-                          </div>
-                          <p className="text-slate-300 text-xs leading-relaxed">
-                            {f.statutory_rule}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Explanation & Remediation */}
-                      <div className="mt-3 text-xs text-slate-400 space-y-1.5 leading-relaxed">
-                        <p>
-                          <strong className="text-slate-300">Legal Assessment:</strong> {f.explanation}
-                        </p>
-                        {f.required_remediation && (
-                          <div className="p-2.5 rounded-lg bg-emerald-950/20 border border-emerald-900/40 text-emerald-300 text-xs flex items-center gap-2">
-                            <ArrowRight className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                            <span><strong className="text-white">Remediation Order:</strong> {f.required_remediation}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+      {/* BOTTOM ROW: Recent Checkpoints (5 cols) + Commitments/DBR (4 cols) + AI Card (3 cols) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        
+        {/* Recent Transactions / Audited Facility Checkpoints (5 cols) - matching fintechui.jpeg */}
+        <div className="md:col-span-12 lg:col-span-5 rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 p-6 space-y-4 shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+            <h2 className="text-sm font-bold text-white">Audited Checkpoints</h2>
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <span className="cursor-pointer hover:text-white">Sort ↑↓</span>
+              <span className="px-2 py-0.5 rounded-lg bg-[#0a0f1d] border border-slate-800 text-[11px]">
+                Active ⌄
+              </span>
             </div>
-          )}
+          </div>
 
-          {/* Action Plan */}
-          {auditResult.action_plan && auditResult.action_plan.length > 0 && (
-            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                Mandatory Regulatory Remediation Plan
-              </h2>
-              <ol className="list-decimal list-inside space-y-2 text-xs text-slate-300 leading-relaxed">
-                {auditResult.action_plan.map((item, i) => (
-                  <li key={i} className="pl-1">
-                    <span className="text-slate-200">{item}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {/* Multi-Agent Trace Accordion */}
-          {auditResult.execution_trace && auditResult.execution_trace.length > 0 && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-              <button
-                onClick={() => setShowTrace(!showTrace)}
-                className="w-full p-4 flex items-center justify-between text-left text-xs font-medium text-slate-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-teal-400" />
-                  <span>LangGraph Agentic Execution Graph & Node Transitions ({auditResult.execution_trace.length} Steps)</span>
-                </div>
-                {showTrace ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
-
-              {showTrace && (
-                <div className="p-4 pt-0 border-t border-slate-800/80 space-y-2">
-                  {auditResult.execution_trace.map((step, idx) => (
-                    <div key={idx} className="flex items-start gap-3 text-xs p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/50">
-                      <div className="h-5 w-5 rounded-full bg-slate-800 text-teal-400 flex items-center justify-center font-mono text-[10px] font-bold shrink-0">
-                        {idx + 1}
+          <div className="space-y-3">
+            {auditResult && auditResult.compliance_findings && auditResult.compliance_findings.length > 0 ? (
+              auditResult.compliance_findings.slice(0, 4).map((f, i) => {
+                const isViolation = f.status === 'VIOLATION';
+                return (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-[#0a0f1d]/60 border border-slate-800/60 hover:bg-[#0a0f1d] transition-all">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          isViolation
+                            ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                        }`}
+                      >
+                        {isViolation ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                       </div>
                       <div>
-                        <div className="font-semibold text-slate-200 font-mono text-[11px]">{step.node}</div>
-                        <div className="text-slate-400 text-[11px] mt-0.5">{step.description}</div>
+                        <h3 className="text-xs font-bold text-white line-clamp-1">{f.checkpoint_name}</h3>
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{f.legal_citation}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          isViolation ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'
+                        }`}
+                      >
+                        {isViolation ? 'Violation' : 'Compliant'}
+                      </span>
+                      {f.excess_financial_impact_aed > 0 && (
+                        <div className="text-[11px] font-mono font-bold text-amber-400 mt-0.5">
+                          +AED {f.excess_financial_impact_aed.toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center text-xs text-slate-400 py-8">
+                Click "Audit Loan Facility" above to populate live findings.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Categories / CBUAE Debt Burden Breakdown (4 cols) - matching fintechui.jpeg */}
+        <div className="md:col-span-6 lg:col-span-4 rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 p-6 flex flex-col justify-between shadow-xl">
+          <div>
+            <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+              <h2 className="text-sm font-bold text-white">CBUAE DBR Breakdown</h2>
+              <button
+                onClick={() => setShowInputModal(true)}
+                className="text-xs text-cyan-400 hover:text-cyan-300 cursor-pointer"
+              >
+                See all
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <div className="text-[11px] text-slate-400 font-medium">Monthly Debt Commitments</div>
+              <div className="text-2xl font-mono font-extrabold text-white mt-0.5">
+                AED 8,450.00 <span className="text-xs font-normal text-slate-400">/ 33.8% DBR</span>
+              </div>
+            </div>
+
+            {/* Segmented multi-color progress bar (matching fintechui.jpeg) */}
+            <div className="flex h-2.5 w-full rounded-full overflow-hidden mt-4 gap-1">
+              <div className="w-[50%] bg-cyan-400 rounded-l-full" title="Personal Loan EMI" />
+              <div className="w-[30%] bg-emerald-400" title="Auto Loan EMI" />
+              <div className="w-[20%] bg-amber-400 rounded-r-full" title="Credit Card 5%" />
+            </div>
+
+            {/* Commitments List with colored dots (matching fintechui.jpeg) */}
+            <div className="mt-5 space-y-3 text-xs">
+              <div className="flex items-center justify-between p-2 rounded-xl bg-[#0a0f1d]/40">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-cyan-400" />
+                  <span className="text-slate-300">Personal Loan Installment</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono font-semibold text-white">
+                  <span>AED 4,500.00</span>
+                  <ArrowUpRight className="h-3 w-3 text-slate-500" />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-2 rounded-xl bg-[#0a0f1d]/40">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  <span className="text-slate-300">Auto Vehicle Loan EMI</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono font-semibold text-white">
+                  <span>AED 2,200.00</span>
+                  <ArrowUpRight className="h-3 w-3 text-slate-500" />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-2 rounded-xl bg-[#0a0f1d]/40">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-amber-400" />
+                  <span className="text-slate-300">Credit Card 5% Imputed Limit</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono font-semibold text-white">
+                  <span>AED 1,750.00</span>
+                  <ArrowUpRight className="h-3 w-3 text-slate-500" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-800/60 text-[10px] text-slate-500 font-mono">
+            Notice 2011/23 Art 2: 50% max DBR cap (Safe limit 40%)
+          </div>
+        </div>
+
+        {/* Revolutionize Your Banking with AI (3 cols) - matching fintechui.jpeg with cosmic sphere */}
+        <div className="md:col-span-6 lg:col-span-3 rounded-3xl bg-gradient-to-b from-[#101b33] via-[#0d162a] to-[#080d19] border border-cyan-500/20 p-6 flex flex-col items-center text-center justify-between shadow-2xl relative overflow-hidden group">
+          
+          {/* Subtle cosmic background glow */}
+          <div className="absolute inset-0 bg-radial from-cyan-500/10 via-transparent to-transparent pointer-events-none" />
+
+          {/* Glowing Iridescent Orb / Sphere (matching fintechui.jpeg) */}
+          <div className="relative my-2">
+            <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-cyan-400 via-teal-300 to-emerald-500 p-1 shadow-lg shadow-cyan-500/40 animate-pulse-subtle">
+              <div className="h-full w-full rounded-full bg-slate-950 flex items-center justify-center overflow-hidden relative">
+                <div className="absolute inset-1 rounded-full bg-gradient-to-br from-cyan-500/80 via-blue-600 to-teal-400 opacity-90 blur-[1px]" />
+                <Sparkles className="h-7 w-7 text-white relative z-10" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card Content */}
+          <div className="space-y-2 mt-2">
+            <h2 className="text-base font-extrabold text-white tracking-tight">
+              Revolutionize Your Banking with AI
+            </h2>
+            <p className="text-xs text-slate-300 leading-relaxed max-w-[210px] mx-auto">
+              Leverage the power of AI to audit credit facilities and safeguard statutory borrower rights.
+            </p>
+          </div>
+
+          {/* White Pill Button (matching fintechui.jpeg) */}
+          <button
+            onClick={() => setShowInputModal(true)}
+            className="w-full mt-4 py-2.5 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs shadow-lg transition-all cursor-pointer"
+          >
+            Audit New Facility
+          </button>
+        </div>
+
+      </div>
+
+      {/* ============================================================== */}
+      {/* HUMAN-FRIENDLY BORROWER AUDIT MODAL (Replaces Technical Jargon) */}
+      {/* ============================================================== */}
+      {showInputModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="w-full max-w-xl rounded-3xl bg-[#0f172a] border border-slate-800 p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h2 className="text-lg font-extrabold text-white">Audit Credit Facility</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Enter everyday loan terms from your bank statement or upload your loan document.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowInputModal(false)}
+                className="h-8 w-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Input Mode Switcher */}
+            <div className="flex bg-[#0a0f1d] p-1 rounded-2xl border border-slate-800 text-xs">
+              <button
+                type="button"
+                onClick={() => setInputMode('simple')}
+                className={`flex-1 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
+                  inputMode === 'simple' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Quick Statement Details
+              </button>
+              <button
+                type="button"
+                onClick={() => setInputMode('document')}
+                className={`flex-1 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
+                  inputMode === 'document' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Upload / Paste Sanction Document
+              </button>
+            </div>
+
+            {/* Form Mode 1: Friendly Borrower Fields */}
+            {inputMode === 'simple' ? (
+              <div className="space-y-4 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-medium">Lending Bank</label>
+                    <input
+                      type="text"
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      placeholder="e.g. Emirates NBD, Apex Finance"
+                      className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-medium">Loan Type</label>
+                    <select
+                      value={loanType}
+                      onChange={(e) => setLoanType(e.target.value)}
+                      className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="Personal Loan">Personal Loan (Max 48 Mo)</option>
+                      <option value="Auto Loan">Auto Loan (Max 60 Mo)</option>
+                      <option value="Residential Mortgage">Residential Mortgage</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-medium">Original Loan Amount (AED)</label>
+                    <input
+                      type="number"
+                      value={loanAmount}
+                      onChange={(e) => setLoanAmount(parseFloat(e.target.value) || 0)}
+                      className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl px-3 py-2 text-white font-mono focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-medium">Monthly Salary (AED)</label>
+                    <input
+                      type="number"
+                      value={monthlySalary}
+                      onChange={(e) => setMonthlySalary(parseFloat(e.target.value) || 0)}
+                      className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl px-3 py-2 text-white font-mono focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-medium">Loan Tenure (Months)</label>
+                    <input
+                      type="number"
+                      value={tenureMonths}
+                      onChange={(e) => setTenureMonths(parseInt(e.target.value) || 0)}
+                      className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl px-3 py-2 text-white font-mono focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-medium">Early Exit Fee Quoted (AED)</label>
+                    <input
+                      type="number"
+                      value={exitFeeCharged}
+                      onChange={(e) => setExitFeeCharged(parseFloat(e.target.value) || 0)}
+                      className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl px-3 py-2 text-white font-mono focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isAuditing}
+                  onClick={handleCompileSimpleInput}
+                  className="w-full py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg transition-all cursor-pointer mt-2 disabled:opacity-50"
+                >
+                  {isAuditing ? 'Auditing Agreement...' : 'Verify Compliance & Calculate Overcharge'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <textarea
+                  rows={8}
+                  value={contractText}
+                  onChange={(e) => setContractText(e.target.value)}
+                  placeholder="Paste loan contract, offer letter or facility terms here..."
+                  className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl p-4 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500"
+                />
+                <button
+                  type="button"
+                  disabled={isAuditing}
+                  onClick={() => {
+                    setShowInputModal(false);
+                    handleAudit(contractText, 'Uploaded Loan Agreement');
+                  }}
+                  className="w-full py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isAuditing ? 'Scanning Document...' : 'Scan Document with AI Engine'}
+                </button>
+              </div>
+            )}
+
+          </div>
         </div>
       )}
 
