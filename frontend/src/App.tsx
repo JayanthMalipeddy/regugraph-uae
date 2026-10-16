@@ -82,7 +82,7 @@ export function App() {
             <>
               {activeTab === 'dashboard' && <AuditStudio scenarios={scenarios} />}
               {activeTab === 'calculators' && <CalculatorsHub />}
-              {activeTab === 'codex' && <RegulatoryCodex />}
+              {activeTab === 'codex' && <RegulatoryCodex initialQuery={searchQuery} />}
               {activeTab === 'diagnostics' && <DiagnosticsHub health={health} />}
             </>
           )}

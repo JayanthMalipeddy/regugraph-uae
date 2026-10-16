@@ -2,7 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard,
   SlidersHorizontal,
-  BookOpen,
+  Bot,
   Activity,
   HelpCircle,
   ExternalLink,
@@ -18,7 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard & Audit', icon: LayoutDashboard },
     { id: 'calculators', label: 'Statutory Calculators', icon: SlidersHorizontal },
-    { id: 'codex', label: 'CBUAE Regulatory Codex', icon: BookOpen },
+    { id: 'codex', label: 'CBUAE Codex AI Agent', icon: Bot },
     { id: 'diagnostics', label: 'Diagnostics & Architecture', icon: Activity },
   ];
 

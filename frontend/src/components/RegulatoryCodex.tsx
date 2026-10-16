@@ -1,298 +1,445 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Search,
-  BookOpen,
+  Bot,
+  Send,
   Sparkles,
-  Clock,
-  Layers,
-  FileText
+  ShieldCheck,
+  AlertTriangle,
+  Copy,
+  Check,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  BookOpen
 } from 'lucide-react';
-import { searchCodex, fetchRegulations } from '../services/api';
-import type { SearchResponse, RegulationDocument } from '../types';
+import { searchCodex } from '../services/api';
+import type { SearchResponse } from '../types';
 
-const formatRef = (ref: string) => {
-  if (!ref) return 'CBUAE Regulation';
-  if (ref.toLowerCase().includes('fee_schedule') || ref.toLowerCase().includes('cbuae_standardized')) {
-    return 'CBUAE Standardized Retail Fee Schedule';
+interface ChatMessage {
+  id: string;
+  sender: 'user' | 'agent';
+  text: string;
+  timestamp: string;
+  citation?: string;
+  refusal_triggered?: boolean;
+  refusal_category?: string;
+  retrieved_chunks?: {
+    content: string;
+    circular_ref: string;
+    article_header: string;
+    rrf_score: number;
+  }[];
+  latency_ms?: number;
+}
+
+interface RegulatoryCodexProps {
+  initialQuery?: string;
+}
+
+const formatCitation = (citation?: string) => {
+  if (!citation || citation === 'N/A - Refusal Gate') return 'Autonomous Statutory Guardrail';
+  if (citation.toLowerCase().includes('fee_schedule') || citation.toLowerCase().includes('cbuae_standardized')) {
+    return 'Circular No. 8/2020: Standardized Schedule of Fee Caps on Banking Services';
   }
-  return ref.replace(/\.md$/i, '').replace(/_/g, ' ');
+  return citation.replace(/\.md$/i, '').replace(/_/g, ' ');
 };
 
-export const RegulatoryCodex: React.FC = () => {
-  const [query, setQuery] = useState<string>('What is the statutory cap on early settlement prepayment fees?');
-  const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [searchResult, setSearchResult] = useState<SearchResponse | null>(null);
-  const [regulations, setRegulations] = useState<RegulationDocument[]>([]);
-  const [filterKeyword, setFilterKeyword] = useState<string>('');
-  const [selectedDoc, setSelectedDoc] = useState<RegulationDocument | null>(null);
+export const RegulatoryCodex: React.FC<RegulatoryCodexProps> = ({ initialQuery = '' }) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: 'msg-welcome',
+      sender: 'agent',
+      text: 'Welcome to the CBUAE Regulatory Codex AI Agent. I am an autonomous banking intelligence assistant grounded strictly on the Central Bank of the United Arab Emirates regulatory corpus, including Circular 8/2020 (Fee Caps), Notice 2011/23 (Debt Burden Ratios), and Circular 31/2013 (Mortgage Regulations).\n\nAsk any question regarding retail credit limits, prepayment penalties, borrower rights, or bank compliance.',
+      timestamp: 'Just now',
+      citation: 'Central Bank of the United Arab Emirates',
+      refusal_triggered: false,
+      retrieved_chunks: []
+    }
+  ]);
+  const [inputValue, setInputValue] = useState<string>(initialQuery);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [expandedChunks, setExpandedChunks] = useState<Record<string, boolean>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Load indexed corpus on mount
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   useEffect(() => {
-    fetchRegulations()
-      .then((data) => {
-        setRegulations(data.documents);
-        if (data.documents.length > 0) {
-          setSelectedDoc(data.documents[0]);
-        }
-      })
-      .catch(console.error);
+    scrollToBottom();
+  }, [messages, isLoading]);
 
-    // Initial search
-    handleSearch('What is the statutory cap on early settlement prepayment fees?');
-  }, []);
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim()) {
+      handleSendMessage(initialQuery);
+    }
+  }, [initialQuery]);
 
-  const handleSearch = async (q: string) => {
-    if (!q.trim()) return;
-    setIsSearching(true);
+  const handleSendMessage = async (textToSend: string) => {
+    const trimmed = textToSend.trim();
+    if (!trimmed || isLoading) return;
+
+    const userMsgId = `user-${Date.now()}`;
+    const userMessage: ChatMessage = {
+      id: userMsgId,
+      sender: 'user',
+      text: trimmed,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+
     try {
-      const res = await searchCodex(q);
-      setSearchResult(res);
-    } catch (err) {
-      console.error(err);
+      const response: SearchResponse = await searchCodex(trimmed);
+      const agentMsgId = `agent-${Date.now()}`;
+      const agentMessage: ChatMessage = {
+        id: agentMsgId,
+        sender: 'agent',
+        text: response.answer,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        citation: response.citation,
+        refusal_triggered: response.refusal_triggered,
+        refusal_category: response.refusal_category,
+        retrieved_chunks: response.retrieved_chunks,
+        latency_ms: response.latency_ms
+      };
+      setMessages((prev) => [...prev, agentMessage]);
+    } catch (err: any) {
+      const errorMessage: ChatMessage = {
+        id: `err-${Date.now()}`,
+        sender: 'agent',
+        text: `Unable to query CBUAE Codex: ${err.message || 'Network error connecting to RAG service.'}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        refusal_triggered: true,
+        citation: 'Engine Communication Alert'
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
-      setIsSearching(false);
+      setIsLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
-  const sampleQueries = [
-    { label: '1% Early Settlement Cap', q: 'What is the maximum early settlement fee for personal loans in UAE?' },
-    { label: '50% DBR Ceiling', q: 'What is the Debt Burden Ratio (DBR) limit under Notice 2011/23?' },
-    { label: 'Pensioner 30% Cap', q: 'What is the maximum DBR allowed for retirees and pensioners in the UAE?' },
-    { label: 'Mortgage LTV Limits', q: 'What are the maximum LTV limits for UAE nationals and expatriates?' },
-    { label: 'UK FCA Refusal Gate', q: 'What are the UK Financial Conduct Authority (FCA) rules on personal loans?' },
-    { label: 'Crypto Domain Refusal', q: 'Does CBUAE regulate cryptocurrency staking and decentralized yield?' },
+  const handleCopyText = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: 'msg-welcome-new',
+        sender: 'agent',
+        text: 'Session cleared. Ready for your next CBUAE regulatory consultation inquiry.',
+        timestamp: 'Just now',
+        citation: 'Central Bank of the United Arab Emirates',
+        refusal_triggered: false
+      }
+    ]);
+  };
+
+  const handleExportChat = () => {
+    const transcript = messages
+      .map(
+        (m) =>
+          `[${m.timestamp}] ${m.sender === 'user' ? 'BORROWER / COMPLIANCE OFFICER' : 'CBUAE CODEX AGENT'}:\n${m.text}\n${
+            m.citation ? `Authority: ${formatCitation(m.citation)}\n` : ''
+          }------------------------------------------------------------`
+      )
+      .join('\n\n');
+
+    const blob = new Blob([transcript], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CBUAE_Regulatory_Consultation_${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const toggleChunks = (msgId: string) => {
+    setExpandedChunks((prev) => ({ ...prev, [msgId]: !prev[msgId] }));
+  };
+
+  const promptSuggestions = [
+    { label: '1% Early Settlement Cap', q: 'What is the statutory cap on early settlement prepayment fees in the UAE?' },
+    { label: '50% DBR Ceiling', q: 'What is the Debt Burden Ratio (DBR) limit under CBUAE Notice 2011/23?' },
+    { label: 'Pensioner 30% Cap', q: 'What is the statutory DBR limit for UAE retirees and pensioners?' },
+    { label: 'Mortgage LTV Caps', q: 'What are the maximum mortgage LTV limits for UAE nationals and expatriates?' },
+    { label: 'Sanadak Dispute Rights', q: 'How does a borrower file a complaint with Sanadak for unlawful bank fees?' },
+    { label: 'Foreign Law Refusal Gate', q: 'What are the UK Financial Conduct Authority (FCA) personal loan rules?' }
   ];
 
-  const filteredDocs = regulations.filter((d) =>
-    d.article_header.toLowerCase().includes(filterKeyword.toLowerCase()) ||
-    d.circular_ref.toLowerCase().includes(filterKeyword.toLowerCase()) ||
-    d.full_content.toLowerCase().includes(filterKeyword.toLowerCase())
-  );
-
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 p-6 sm:p-8 border border-slate-800 shadow-xl">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">
-            <BookOpen className="h-3.5 w-3.5" />
-            Central Bank of the UAE Regulatory Codex
+      {/* Header Banner (Matching fintechui.jpeg aesthetic) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1.5">
+              <Bot className="h-3 w-3" />
+              Autonomous Codex Agent
+            </span>
+            <span className="text-xs text-slate-400 font-medium">Grounded RAG Engine • ChromaDB & BM25</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Grounded Hybrid Regulatory Search & Codex
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1">
+            CBUAE Regulatory Codex AI Agent
           </h1>
-          <p className="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
-            Query official CBUAE retail credit regulations with hybrid dense vector retrieval and BM25 lexical search.
-            Equipped with autonomous foreign-jurisdiction and ungrounded topic refusal gates.
+          <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+            Direct conversational intelligence grounded strictly on official Central Bank of the UAE regulatory gazettes, statutory fee schedules, and consumer protection mandates.
           </p>
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            onClick={handleClearChat}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[#131b2e] hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs font-semibold transition-all cursor-pointer"
+            title="Clear current session"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Clear</span>
+          </button>
+          <button
+            onClick={handleExportChat}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#131b2e] hover:bg-slate-800 border border-slate-800 text-cyan-400 hover:text-cyan-300 text-xs font-semibold transition-all cursor-pointer"
+            title="Export consultation transcript"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Export Guidance</span>
+          </button>
         </div>
       </div>
 
-      {/* Search Input Box */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSearch(query);
-          }}
-          className="flex flex-col sm:flex-row gap-3"
-        >
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search CBUAE regulations, fee caps, DBR rules, mortgage LTV..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isSearching}
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs shadow-lg shadow-emerald-950/40 disabled:opacity-50 transition-all cursor-pointer"
-          >
-            {isSearching ? (
-              <>
-                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Searching...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                <span>Search Codex</span>
-              </>
-            )}
-          </button>
-        </form>
+      {/* Main Agent Chat Window */}
+      <div className="rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 shadow-2xl flex flex-col h-[650px] overflow-hidden">
+        
+        {/* Chat Stream Area */}
+        <div className="flex-1 p-5 sm:p-6 overflow-y-auto space-y-5 scrollbar-thin">
+          {messages.map((msg) => {
+            const isUser = msg.sender === 'user';
+            const isExpanded = !!expandedChunks[msg.id];
+            const hasChunks = msg.retrieved_chunks && msg.retrieved_chunks.length > 0;
 
-        {/* Quick query pills */}
-        <div className="flex flex-wrap gap-2 pt-1">
-          <span className="text-[11px] text-slate-400 py-1">Quick Inquiries:</span>
-          {sampleQueries.map((item, idx) => (
+            return (
+              <div
+                key={msg.id}
+                className={`flex gap-3 max-w-3xl ${isUser ? 'ml-auto justify-end' : 'mr-auto justify-start'}`}
+              >
+                {/* Agent Avatar */}
+                {!isUser && (
+                  <div className="h-9 w-9 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-emerald-400 p-0.5 shrink-0 shadow-md shadow-cyan-950/40">
+                    <div className="h-full w-full rounded-[14px] bg-[#0a0f1d] flex items-center justify-center text-cyan-400">
+                      <Bot className="h-4 w-4" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Message Bubble */}
+                <div
+                  className={`space-y-2.5 rounded-3xl p-4 sm:p-5 text-xs sm:text-sm leading-relaxed ${
+                    isUser
+                      ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white rounded-tr-sm shadow-lg shadow-cyan-950/30'
+                      : 'bg-[#131b2e]/90 border border-slate-800 text-slate-200 rounded-tl-sm shadow-md'
+                  }`}
+                >
+                  {/* Top Bar for Agent Message */}
+                  {!isUser && (
+                    <div className="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-2 text-[11px]">
+                      <div className="flex items-center gap-2">
+                        {msg.refusal_triggered ? (
+                          <span className="flex items-center gap-1 font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                            <AlertTriangle className="h-3 w-3" />
+                            Statutory Guardrail Active
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                            <ShieldCheck className="h-3 w-3" />
+                            {formatCitation(msg.citation)}
+                          </span>
+                        )}
+                        {msg.latency_ms && (
+                          <span className="hidden sm:inline text-slate-500 font-mono text-[10px]">
+                            ⚡ {msg.latency_ms}ms
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Copy Button */}
+                      <button
+                        onClick={() => handleCopyText(msg.id, msg.text)}
+                        className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        title="Copy answer"
+                      >
+                        {copiedId === msg.id ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Message Body */}
+                  <div className="whitespace-pre-wrap font-sans text-slate-100">
+                    {msg.text}
+                  </div>
+
+                  {/* Refusal Explanatory Banner */}
+                  {!isUser && msg.refusal_triggered && (
+                    <div className="p-3 rounded-2xl bg-amber-950/20 border border-amber-800/30 text-[11px] text-amber-300 space-y-1">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                        <span>Jurisdiction & Grounding Notice</span>
+                      </div>
+                      <p className="text-amber-200/80">
+                        The Codex engine automatically rejects queries referencing non-UAE authorities or ungrounded asset domains to guarantee absolute regulatory accuracy.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Grounded RAG Context Accordion (Shows retrieved ChromaDB excerpts) */}
+                  {!isUser && hasChunks && (
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <button
+                        onClick={() => toggleChunks(msg.id)}
+                        className="flex items-center justify-between w-full py-1.5 px-3 rounded-xl bg-[#0a0f1d] hover:bg-slate-900 border border-slate-800 text-[11px] text-cyan-400 font-medium transition-all cursor-pointer"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <BookOpen className="h-3.5 w-3.5 text-cyan-400" />
+                          <span>Grounded RAG Context ({msg.retrieved_chunks?.length} official excerpts)</span>
+                        </span>
+                        {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="mt-2 space-y-2 animate-in fade-in duration-200">
+                          {msg.retrieved_chunks?.map((chunk, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3 rounded-xl bg-[#070b14] border border-slate-800/80 text-[11px] space-y-1"
+                            >
+                              <div className="flex items-center justify-between font-bold text-cyan-300">
+                                <span>{formatCitation(chunk.circular_ref)}</span>
+                                <span className="text-[10px] font-mono text-slate-400">{chunk.article_header}</span>
+                              </div>
+                              <p className="text-slate-300 text-[11px] leading-relaxed font-mono line-clamp-4">
+                                {chunk.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Timestamp */}
+                  <div
+                    className={`text-[10px] text-right font-mono ${
+                      isUser ? 'text-cyan-200' : 'text-slate-500'
+                    }`}
+                  >
+                    {msg.timestamp}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Typing Indicator */}
+          {isLoading && (
+            <div className="flex gap-3 max-w-xl mr-auto">
+              <div className="h-9 w-9 rounded-2xl bg-gradient-to-tr from-cyan-500 to-emerald-400 p-0.5 shrink-0 animate-pulse">
+                <div className="h-full w-full rounded-[14px] bg-[#0a0f1d] flex items-center justify-center text-cyan-400">
+                  <Bot className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="rounded-3xl rounded-tl-sm p-4 bg-[#131b2e] border border-slate-800 text-xs text-slate-300 flex items-center gap-2.5 shadow-md">
+                <div className="flex space-x-1">
+                  <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+                <span className="text-slate-400 font-mono text-[11px]">
+                  Searching CBUAE RAG Corpus & Grounding Answer...
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Suggestion Prompts Bar */}
+        <div className="px-5 py-2.5 bg-[#0a0f1d]/90 border-t border-slate-800/80 flex items-center gap-2 overflow-x-auto scrollbar-none">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+            <Sparkles className="h-3 w-3 text-cyan-400" />
+            Inquiries:
+          </span>
+          {promptSuggestions.map((item, idx) => (
             <button
               key={idx}
-              onClick={() => {
-                setQuery(item.q);
-                handleSearch(item.q);
-              }}
-              className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 hover:border-slate-700 hover:bg-slate-800/60 transition-colors cursor-pointer"
+              onClick={() => handleSendMessage(item.q)}
+              disabled={isLoading}
+              className="px-3 py-1 rounded-xl bg-[#131b2e] hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 hover:text-white whitespace-nowrap transition-all cursor-pointer disabled:opacity-40"
             >
               {item.label}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Search Result Card */}
-      {searchResult && (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4 animate-in fade-in duration-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                  searchResult.refusal_triggered
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                    : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                }`}
-              >
-                {searchResult.refusal_triggered
-                  ? `Autonomous Refusal Gate: ${searchResult.refusal_category}`
-                  : 'Grounded Statutory Synthesis'}
-              </span>
-              <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                <Clock className="h-3 w-3" /> {searchResult.latency_ms} ms
-              </span>
-            </div>
-            {!searchResult.refusal_triggered && (
-              <span className="text-xs font-mono font-semibold text-emerald-400">
-                Official Citation: {searchResult.citation}
-              </span>
-            )}
-          </div>
-
-          <div
-            className={`p-4 rounded-xl border leading-relaxed text-xs sm:text-sm ${
-              searchResult.refusal_triggered
-                ? 'bg-amber-950/20 border-amber-900/40 text-amber-200 font-medium'
-                : 'bg-slate-950/80 border-slate-800 text-slate-200'
-            }`}
+        {/* Interactive Input Bar */}
+        <div className="p-4 bg-[#0a0f1d] border-t border-slate-800">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSendMessage(inputValue);
+            }}
+            className="flex items-center gap-3"
           >
-            {searchResult.answer}
-          </div>
-
-          {/* Retrieved Context Chunks */}
-          {searchResult.retrieved_chunks && searchResult.retrieved_chunks.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Layers className="h-3.5 w-3.5 text-teal-400" />
-                Retrieved Regulatory Chunks (Rank-Fused RRF k=60)
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {searchResult.retrieved_chunks.map((chunk, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="font-semibold text-emerald-400">{formatRef(chunk.circular_ref)}</span>
-                      <span className="font-mono text-slate-500">RRF: {chunk.rrf_score}</span>
-                    </div>
-                    <div className="font-bold text-white text-[11px] line-clamp-1">
-                      {chunk.article_header}
-                    </div>
-                    <p className="text-slate-400 text-[11px] line-clamp-3 leading-relaxed">
-                      {chunk.content}
-                    </p>
-                  </div>
-                ))}
+            <div className="relative flex-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Ask about CBUAE circulars, fee caps, DBR rules, mortgage LTV, Sanadak disputes..."
+                disabled={isLoading}
+                className="w-full bg-[#131b2e] border border-slate-800/90 rounded-2xl pl-4 pr-10 py-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 shadow-inner"
+              />
+              <div className="absolute right-3 top-3 text-[10px] font-mono text-slate-500 hidden sm:block">
+                Press ↵
               </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* CBUAE Regulations Corpus Explorer */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-              <FileText className="h-4 w-4 text-emerald-400" />
-              Indexed CBUAE Regulatory Corpus ({regulations.length} Articles)
-            </h2>
-            <p className="text-xs text-slate-400">
-              ChromaDB vector store collection synchronized with rank-BM25 sparse index.
-            </p>
+            <button
+              type="submit"
+              disabled={!inputValue.trim() || isLoading}
+              className="h-11 px-5 rounded-2xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs shadow-lg shadow-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            >
+              <Send className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Ask Codex</span>
+            </button>
+          </form>
+
+          <div className="flex items-center justify-between text-[10px] text-slate-500 pt-2 px-1">
+            <span>Central Bank of the United Arab Emirates (CBUAE) Regulatory RAG Engine</span>
+            <span>Zero Hallucination Grounding • Active Statutory Guardrails</span>
           </div>
-          <input
-            type="text"
-            value={filterKeyword}
-            onChange={(e) => setFilterKeyword(e.target.value)}
-            placeholder="Filter articles..."
-            className="w-full sm:w-64 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-          />
         </div>
 
-        {/* Master-Detail Corpus View */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* Article List (5 cols) */}
-          <div className="lg:col-span-5 rounded-2xl bg-slate-900/50 border border-slate-800 p-3 space-y-2 max-h-[500px] overflow-y-auto">
-            {filteredDocs.map((doc) => {
-              const isSelected = selectedDoc?.id === doc.id;
-              return (
-                <button
-                  key={doc.id}
-                  onClick={() => setSelectedDoc(doc)}
-                  className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-slate-800 border-emerald-500 shadow-md shadow-emerald-950/20'
-                      : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-800/40'
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                    <span className="font-semibold text-emerald-400">{formatRef(doc.circular_ref)}</span>
-                    <span className="font-mono text-slate-500">{doc.token_count} words</span>
-                  </div>
-                  <h3 className="text-xs font-bold text-white line-clamp-1">{doc.article_header}</h3>
-                  <p className="text-[11px] text-slate-400 line-clamp-2 mt-1 leading-relaxed">
-                    {doc.content_preview}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Article Full Detail View (7 cols) */}
-          <div className="lg:col-span-7 rounded-2xl bg-slate-900/50 border border-slate-800 p-6 flex flex-col justify-between">
-            {selectedDoc ? (
-              <div className="space-y-4">
-                <div className="border-b border-slate-800 pb-3">
-                  <div className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-2">
-                    {formatRef(selectedDoc.circular_ref)}
-                  </div>
-                  <h3 className="text-base font-bold text-white">
-                    {selectedDoc.article_header}
-                  </h3>
-                </div>
-
-                <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed font-mono whitespace-pre-wrap max-h-[380px] overflow-y-auto select-all">
-                  {selectedDoc.full_content}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center text-xs text-slate-500 py-16">
-                Select an article on the left to read statutory provisions.
-              </div>
-            )}
-
-            <div className="pt-3 border-t border-slate-800 text-[10px] text-slate-500 flex items-center justify-between">
-              <span>Governing Authority: Central Bank of the UAE</span>
-              <span>Jurisdiction: United Arab Emirates (Federal)</span>
-            </div>
-          </div>
-
-        </div>
       </div>
 
     </div>
   );
 };
+
+export default RegulatoryCodex;
