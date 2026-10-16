@@ -81,7 +81,7 @@ def node_deconstruct_contract(state: AuditState) -> Dict[str, Any]:
     loan_type = "Personal Loan"
     if "mortgage" in clean_text_lower or "home finance" in clean_text_lower or "property" in clean_text_lower:
         loan_type = "Mortgage Loan"
-    elif "auto" in clean_text_lower or "car" in clean_text_lower or "vehicle" in clean_text_lower:
+    elif ("auto" in clean_text_lower or "car" in clean_text_lower or "vehicle" in clean_text_lower) and ("personal" not in clean_text_lower and "consolidation" not in clean_text_lower):
         loan_type = "Auto Loan"
 
     # Extract Loan Amount
@@ -92,9 +92,13 @@ def node_deconstruct_contract(state: AuditState) -> Dict[str, Any]:
     income_match = re.search(r"(?:Salary|Monthly Income|Gross Income)[^\n\d]*?(?:AED|Dhs?\.?)\s*([\d,]+(?:\.\d{2})?)", clean_text, re.IGNORECASE)
     salary = float(income_match.group(1).replace(",", "")) if income_match else 20_000.0
 
+    # Extract Aggregate Monthly Commitments if detailed debt schedule is present
+    agg_match = re.search(r"(?:Total Aggregate Monthly Debt|Aggregate Monthly Debt|Total Monthly Commitments|Total Monthly Debt Commitments|Total Monthly Obligation)[^\n\d]*?(?:AED|Dhs?\.?)\s*([\d,]+(?:\.\d{2})?)", clean_text, re.IGNORECASE)
+
     # Extract EMI
     emi_match = re.search(r"(?:EMI|Monthly Installment|Monthly Repayment)[^\n\d]*?(?:AED|Dhs?\.?)\s*([\d,]+(?:\.\d{2})?)", clean_text, re.IGNORECASE)
     emi = float(emi_match.group(1).replace(",", "")) if emi_match else 5_000.0
+    total_commitments = float(agg_match.group(1).replace(",", "")) if agg_match else emi
 
     # Extract Tenure
     tenure_match = re.search(r"(?:Tenure|Repayment Period)[^\n\d]*?(\d+)\s*(Months|Years)", clean_text, re.IGNORECASE)
@@ -127,6 +131,7 @@ def node_deconstruct_contract(state: AuditState) -> Dict[str, Any]:
         {"clause_type": "Loan Amount", "contract_statement": f"AED {loan_amt:,.2f}", "extracted_value": loan_amt},
         {"clause_type": "Borrower Income", "contract_statement": f"AED {salary:,.2f} per month", "extracted_value": salary},
         {"clause_type": "Monthly EMI", "contract_statement": f"AED {emi:,.2f}", "extracted_value": emi},
+        {"clause_type": "Total Monthly Debt Commitments", "contract_statement": f"AED {total_commitments:,.2f} per month", "extracted_value": total_commitments},
         {"clause_type": "Tenure", "contract_statement": f"{tenure_val} Months", "extracted_value": tenure_val},
         {"clause_type": "Early Settlement Fee", "contract_statement": f"{early_pct}%" + (f" (Min AED {early_min_aed:,.0f})" if early_min_aed else "") + (f" (Capped at AED {contract_early_cap:,.0f})" if contract_early_cap else ""), "extracted_value": {"pct": early_pct, "min_aed": early_min_aed, "contract_cap": contract_early_cap}},
         {"clause_type": "Processing Fee", "contract_statement": f"AED {proc_fee:,.2f}", "extracted_value": proc_fee},
@@ -195,8 +200,9 @@ def node_deterministic_math_audit(state: AuditState) -> Dict[str, Any]:
     late_fee = clauses.get("Late Payment Fee", 150.0)
 
     # 1. DBR Audit
+    monthly_commitment = clauses.get("Total Monthly Debt Commitments", emi)
     dbr_result = calculate_dbr(
-        monthly_loan_installments=emi,
+        monthly_loan_installments=monthly_commitment,
         gross_monthly_salary=salary
     )
 

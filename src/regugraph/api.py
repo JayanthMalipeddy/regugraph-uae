@@ -174,6 +174,15 @@ def get_sample_scenarios():
             "summary": "Out-of-jurisdiction agreement governed by UK Financial Conduct Authority (FCA). Triggers immediate autonomous Refusal Gate.",
             "severity": "OUT_OF_JURISDICTION_REFUSAL",
             "expected_restitution_aed": 0.0
+        },
+        {
+            "id": "scenario-5",
+            "filename": "sample_contract_5_dbr_overleveraged_consolidation.md",
+            "title": "Over-Leveraged Consolidation Loan (Dubai Crescent Credit Bank)",
+            "loan_type": "Personal Loan",
+            "summary": "Consolidated retail credit facility containing severe 74.7% DBR breach exceeding statutory 50% ceiling under Notice 2011/23 Art 7.",
+            "severity": "CRITICAL_DBR_BREACH",
+            "expected_restitution_aed": 0.0
         }
     ]
 

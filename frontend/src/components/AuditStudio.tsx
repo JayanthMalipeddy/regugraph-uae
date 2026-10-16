@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   TrendingUp,
   Lock,
@@ -10,7 +10,9 @@ import {
   Sparkles,
   ArrowUpRight,
   Search,
-  FileText
+  FileText,
+  Upload,
+  Check
 } from 'lucide-react';
 import type { ContractScenario, AuditResponse } from '../types';
 import { auditContract, exportAuditReport } from '../services/api';
@@ -34,6 +36,12 @@ export const AuditStudio: React.FC<AuditStudioProps> = ({ scenarios, onNavigateT
   const [inputMode, setInputMode] = useState<'simple' | 'document'>('simple');
   const [showDownloadMenu, setShowDownloadMenu] = useState<boolean>(false);
   const [activeBannerMessage, setActiveBannerMessage] = useState<string | null>(null);
+
+  // File Upload & Sample Sanctions State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [uploadedFileSize, setUploadedFileSize] = useState<string | null>(null);
+  const [selectedSampleId, setSelectedSampleId] = useState<string>('scenario-1');
 
   // Borrower simple inputs (Human friendly, no technical jargon!)
   const [bankName, setBankName] = useState<string>('Apex Gulf Finance');
@@ -103,6 +111,110 @@ Governing Law: Central Bank of the United Arab Emirates.`;
     setContractText(text);
     setShowInputModal(false);
     handleAudit(text, `${bankName} ${loanType}`);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadedFileName(file.name);
+    const sizeKb = (file.size / 1024).toFixed(1);
+    setUploadedFileSize(`${sizeKb} KB`);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        setContractText(content);
+        setActiveBannerMessage(`Sanction document loaded: ${file.name} (${sizeKb} KB)`);
+        setTimeout(() => setActiveBannerMessage(null), 5000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDropFile = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    setUploadedFileName(file.name);
+    const sizeKb = (file.size / 1024).toFixed(1);
+    setUploadedFileSize(`${sizeKb} KB`);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        setContractText(content);
+        setActiveBannerMessage(`Sanction document loaded: ${file.name} (${sizeKb} KB)`);
+        setTimeout(() => setActiveBannerMessage(null), 5000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const sampleSanctionDocuments = [
+    {
+      id: 'scenario-1',
+      title: 'Apex Gulf Finance (Personal Loan)',
+      bank: 'Apex Gulf Finance PJSC',
+      type: 'Personal Loan',
+      badge: '🔴 Overcharge & Tenure Violation',
+      badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+      description: 'Unlawful 3% prepayment exit fee (AED 12k vs AED 4k cap) and 60-month tenure cap violation.',
+      expected: 'Non-Compliant (+AED 16,050 Restitution)'
+    },
+    {
+      id: 'scenario-2',
+      title: 'Emirates First Bank (Compliant Mortgage)',
+      bank: 'Emirates First Commercial Bank',
+      type: 'Residential Mortgage',
+      badge: '🟢 100% Fully Compliant',
+      badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      description: 'First home mortgage strictly adhering to Notice 3877/2019, 25-yr tenure cap, and 1% fee cap.',
+      expected: 'Fully Compliant (AED 0 Restitution)'
+    },
+    {
+      id: 'scenario-3',
+      title: 'Falcon Auto Credit (Subprime Auto Loan)',
+      bank: 'Falcon Auto Credit LLC',
+      type: 'Auto Loan',
+      badge: '🔴 72-Mo Tenure Breach',
+      badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+      description: 'Vehicle credit facility containing 72-month tenure breach and compounding late fee.',
+      expected: 'Tenure Infraction (+AED 2,250 Restitution)'
+    },
+    {
+      id: 'scenario-5',
+      title: 'Dubai Crescent Credit (Over-Leveraged DBR)',
+      bank: 'Dubai Crescent Credit Bank PJSC',
+      type: 'Consolidated Loan',
+      badge: '🔴 74.7% DBR Ceiling Breach',
+      badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+      description: 'Consolidated debt commitments pushing DBR to 74.7%, breaching CBUAE 50% cap under Notice 2011/23.',
+      expected: 'Severe DBR Breach (Sanctions Risk)'
+    },
+    {
+      id: 'scenario-4',
+      title: 'Barclays London Branch (Offshore UK Facility)',
+      bank: 'Barclays Bank UK PLC',
+      type: 'Offshore Facility',
+      badge: '🟡 Jurisdiction Refusal Gate',
+      badgeClass: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+      description: 'Out-of-jurisdiction agreement governed by UK FCA. Triggers autonomous CBUAE refusal gate.',
+      expected: 'Autonomous Refusal Gate'
+    }
+  ];
+
+  const handleSelectSampleSanction = (sampleId: string) => {
+    setSelectedSampleId(sampleId);
+    const matched = scenarios.find((s) => s.id === sampleId);
+    if (matched && matched.contract_text) {
+      setContractText(matched.contract_text);
+      setUploadedFileName(matched.filename || `${sampleId}.md`);
+      setUploadedFileSize('Sanction Sample');
+    }
   };
 
   const handleExportWord = async () => {
@@ -1189,7 +1301,7 @@ Governing Law: Central Bank of the United Arab Emirates.`;
       {/* ============================================================== */}
       {showInputModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-xl rounded-3xl bg-[#0f172a] border border-slate-800 p-6 sm:p-8 space-y-6 shadow-2xl relative">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#0f172a] border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
             
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div>
@@ -1308,25 +1420,120 @@ Governing Law: Central Bank of the United Arab Emirates.`;
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
-                <textarea
-                  rows={8}
-                  value={contractText}
-                  onChange={(e) => setContractText(e.target.value)}
-                  placeholder="Paste loan contract, offer letter or facility terms here..."
-                  className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl p-4 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500"
-                />
+              <div className="space-y-4">
+                
+                {/* 1. Five Sample Sanction Documents Selector to Test & Validate Results */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                      5 Sample Sanction Documents (Validate Different Results)
+                    </span>
+                    <span className="text-[10px] text-slate-400">Click any sample to load & test</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {sampleSanctionDocuments.map((s) => {
+                      const isSelected = selectedSampleId === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => handleSelectSampleSanction(s.id)}
+                          className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                            isSelected
+                              ? 'bg-cyan-950/40 border-cyan-500/80 shadow-md ring-1 ring-cyan-500/30'
+                              : 'bg-[#0a0f1d] border-slate-800/80 hover:border-slate-700 hover:bg-[#0d1527]'
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="font-mono text-slate-400">{s.type}</span>
+                              <span className={`px-1.5 py-0.2 rounded-full font-bold border text-[9px] ${s.badgeClass}`}>
+                                {s.badge}
+                              </span>
+                            </div>
+                            <div className="text-xs font-bold text-white line-clamp-1">{s.title}</div>
+                            <div className="text-[10px] text-slate-400 line-clamp-1">{s.description}</div>
+                          </div>
+                          <div className="mt-1.5 pt-1.5 border-t border-slate-800/60 flex items-center justify-between text-[10px]">
+                            <span className="text-cyan-300 font-mono font-medium">{s.expected}</span>
+                            <span className={`font-bold ${isSelected ? 'text-cyan-400' : 'text-slate-500'}`}>
+                              {isSelected ? 'Selected ✓' : 'Load →'}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Drag & Drop or Browse Sanction Document Upload Dropzone */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <Upload className="h-3.5 w-3.5 text-cyan-400" />
+                      Upload Your Bank Sanction Document
+                    </span>
+                    {uploadedFileName && (
+                      <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                        <Check className="h-3 w-3" /> Loaded: {uploadedFileName} {uploadedFileSize ? `(${uploadedFileSize})` : ''}
+                      </span>
+                    )}
+                  </div>
+
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDropFile}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-slate-800 hover:border-cyan-500/60 rounded-2xl p-4 text-center bg-[#0a0f1d]/60 hover:bg-[#0a0f1d] transition-all cursor-pointer group"
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileUpload}
+                      accept=".txt,.pdf,.doc,.docx,.md,.json,.rtf"
+                      className="hidden"
+                    />
+                    <Upload className="h-6 w-6 text-slate-500 group-hover:text-cyan-400 mx-auto mb-1.5 transition-colors" />
+                    <div className="text-xs font-semibold text-white">
+                      Drop sanction document here, or <span className="text-cyan-400 underline">browse</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">
+                      Supports PDF, Word (.doc, .docx), Text (.txt, .md), and RTF files
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Document Text Preview & Editor */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Document Text Preview / Editor</span>
+                    <span className="font-mono text-[10px]">{contractText.length} characters</span>
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={contractText}
+                    onChange={(e) => setContractText(e.target.value)}
+                    placeholder="Sanction document text will appear here. You can also paste agreement terms directly..."
+                    className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500 resize-y"
+                  />
+                </div>
+
+                {/* Run Audit Button */}
                 <button
                   type="button"
-                  disabled={isAuditing}
+                  disabled={isAuditing || !contractText.trim()}
                   onClick={() => {
                     setShowInputModal(false);
-                    handleAudit(contractText, 'Uploaded Loan Agreement');
+                    handleAudit(contractText, uploadedFileName ? `Sanction Document (${uploadedFileName})` : 'Sanction Agreement');
                   }}
-                  className="w-full py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {isAuditing ? 'Scanning Document...' : 'Scan Document with AI Engine'}
+                  <Sparkles className="h-4 w-4" />
+                  <span>{isAuditing ? 'Scanning Document...' : 'Run CBUAE Compliance Audit on Sanction Document'}</span>
                 </button>
+
               </div>
             )}
 
