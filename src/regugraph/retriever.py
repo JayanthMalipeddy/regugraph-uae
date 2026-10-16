@@ -1,6 +1,7 @@
 """Hybrid Retrieval Engine combining ChromaDB (Dense) + Rank-BM25 (Sparse) with RRF Reranking."""
 import re
 import math
+import hashlib
 from typing import List, Dict, Any, Tuple
 import chromadb
 from rank_bm25 import BM25Okapi
@@ -26,7 +27,7 @@ class RobustEmbeddingFunction:
         self.use_ollama = False
         try:
             import requests
-            res = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=1.0)
+            res = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=0.8)
             if res.status_code == 200:
                 self.use_ollama = True
         except Exception:
@@ -44,14 +45,16 @@ class RobustEmbeddingFunction:
             except Exception:
                 pass
         
-        # Deterministic 384-dim semantic-hash feature vector fallback
+        # Fully deterministic 384-dim semantic-hash feature vector fallback (cross-process stable)
         vectors = []
         for t in texts:
             vec = [0.0] * 384
-            words = re.findall(r"\w+", t.lower())
+            words = re.findall(r"\b\w+\b", t.lower())
             for i, w in enumerate(words):
-                h = hash(w) % 384
-                vec[h] += 1.0 / (1.0 + math.log1p(i))
+                if len(w) <= 2:
+                    continue
+                h = int.from_bytes(hashlib.md5(w.encode("utf-8")).digest()[:4], "little") % 384
+                vec[h] += 1.0
             # Normalize
             norm = math.sqrt(sum(v * v for v in vec)) or 1.0
             vectors.append([v / norm for v in vec])
@@ -94,9 +97,22 @@ class HybridRetriever:
         if tokenized_corpus:
             self.bm25 = BM25Okapi(tokenized_corpus)
 
-        # Sync ChromaDB if empty or size mismatch
+        # Sync ChromaDB if empty, size mismatch, or probe indicates stale/unaligned embeddings
         current_count = self.collection.count()
-        if current_count != len(docs):
+        needs_reindex = (current_count != len(docs))
+        if not needs_reindex and current_count > 0:
+            try:
+                probe = self.collection.query(
+                    query_embeddings=[self.embed_fn.embed_query("Debt Burden Ratio")],
+                    n_results=1
+                )
+                if probe and probe.get("distances") and probe["distances"][0]:
+                    if probe["distances"][0][0] > 0.85:
+                        needs_reindex = True
+            except Exception:
+                needs_reindex = True
+
+        if needs_reindex:
             # Clean and reindex
             try:
                 self.chroma_client.delete_collection(self.collection_name)

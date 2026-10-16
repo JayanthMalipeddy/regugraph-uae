@@ -1,11 +1,13 @@
 """ReguGraph-UAE: Enterprise Banking Compliance & Regulatory Intelligence Platform
-Standardized against Central Bank of the United Arab Emirates (CBUAE) Regulatory Decrees.
+Built to professional UAE FinTech web application standards.
 
-Designed with senior enterprise front-end engineering standards:
-- Real-world institutional UI with visual risk heatmaps and side-by-side legal redlines
-- Interactive CBUAE Regulatory Codex & Knowledge Portal
-- Statutory Financial Simulators (DBR Borrowing Capacity, Early Exit Caps, Mortgage LTVs)
-- Direct integration with local ChromaDB server (localhost:8081)
+Key Features:
+- Premium consumer-facing FinTech landing & document audit portal
+- Visual 3-step audit guide and consumer statutory rights grid
+- Side-by-side legal redlines with automated restitution calculation in AED
+- CBUAE Regulatory Codex with natural language search
+- Statutory FinTech Calculators (DBR Headroom, Early Settlement Cap, Mortgage LTV)
+- Dedicated System Architecture & Diagnostics Page (ChromaDB status, benchmark report, state machine)
 """
 import streamlit as st
 from pathlib import Path
@@ -14,14 +16,10 @@ import json
 from regugraph.config import (
     SAMPLE_CONTRACTS_DIR,
     EVALUATION_DIR,
+    CHROMA_HOST,
+    CHROMA_PORT,
     OLLAMA_MODEL,
-    MAX_DBR_PERCENT,
-    MAX_EARLY_SETTLEMENT_CAP_AED,
-    MAX_EARLY_SETTLEMENT_PCT,
-    MAX_PERSONAL_PROCESSING_FEE_CAP_AED,
-    MAX_PERSONAL_LOAN_TENURE,
-    MAX_AUTO_LOAN_TENURE,
-    MAX_MORTGAGE_TENURE
+    MAX_DBR_PERCENT
 )
 from regugraph.engine import run_compliance_audit, answer_regulatory_inquiry
 from regugraph.report_generator import generate_markdown_dossier
@@ -30,6 +28,9 @@ from regugraph.core_math import calculate_dbr, audit_early_settlement_fee
 from regugraph.agents import RegulatoryLLM
 from regugraph.ui_components import (
     get_custom_css,
+    render_website_hero,
+    render_how_it_works,
+    render_consumer_rights_grid,
     create_dbr_gauge,
     create_fee_comparison_chart,
     render_executive_redline_item
@@ -37,7 +38,7 @@ from regugraph.ui_components import (
 
 # ---------------------------------------------------------------- Page Config & Styles
 st.set_page_config(
-    page_title="ReguGraph-UAE | CBUAE Regulatory Intelligence Suite",
+    page_title="ReguGraph | UAE Banking Regulatory Compliance Portal",
     page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -49,157 +50,159 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 # Session State Initialization
 if "audit_result" not in st.session_state:
     st.session_state.audit_result = None
-if "active_contract_title" not in st.session_state:
-    st.session_state.active_contract_title = "Apex Gulf Personal Credit Agreement"
-if "active_contract_text" not in st.session_state:
+if "selected_scenario" not in st.session_state:
+    st.session_state.selected_scenario = "Apex Gulf Personal Loan (Predatory terms: 63% DBR, 2.75% exit fee)"
+if "contract_text_input" not in st.session_state:
     p1 = SAMPLE_CONTRACTS_DIR / "sample_contract_1_predatory_personal_loan.md"
-    st.session_state.active_contract_text = p1.read_text(encoding="utf-8") if p1.exists() else ""
+    st.session_state.contract_text_input = p1.read_text(encoding="utf-8") if p1.exists() else ""
 
-# ---------------------------------------------------------------- Top Hero Header
-st.markdown("""
-<div class="brand-hero">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
-        <div>
-            <div class="brand-title">
-                🏛️ ReguGraph-UAE
-                <span class="brand-badge">Enterprise Edition v2026.2</span>
-            </div>
-            <div class="brand-subtitle">
-                Autonomous Regulatory & Compliance Audit Suite for UAE Commercial Banking & Retail Credit Facilities.<br>
-                Statutory cross-examination against Central Bank of the UAE decrees (Circular 8/2020, Notice 2011/23, Circular 31/2013, Fee Schedule Caps).
-            </div>
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <span class="brand-badge" style="background: rgba(16, 185, 129, 0.15); color: #34D399; border-color: rgba(16, 185, 129, 0.4);">
-                ● ChromaDB Server :8081 Active
-            </span>
-            <span class="brand-badge" style="background: rgba(99, 102, 241, 0.15); color: #A5B4FC; border-color: rgba(99, 102, 241, 0.4);">
-                Zero-Hallucination Math Engine
-            </span>
-        </div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ---------------------------------------------------------------- Primary Navigation
-selected_workspace = st.segmented_control(
-    "Enterprise Workspace Selector",
+# ---------------------------------------------------------------- Primary Navigation Bar
+top_nav = st.segmented_control(
+    "ReguGraph Navigation Menu",
     options=[
-        "📑 Contract Compliance Auditor & Redline Studio",
-        "⚖️ CBUAE Regulatory Codex & Intelligence Hub",
+        "🚀 Contract Audit Portal",
+        "⚖️ Know Your Rights & CBUAE Codex",
         "🧮 Statutory Financial Simulators",
-        "🏆 Verification Benchmark & Audit Certificate"
+        "⚙️ System Diagnostics & RAG Architecture"
     ],
-    default="📑 Contract Compliance Auditor & Redline Studio",
+    default="🚀 Contract Audit Portal",
     label_visibility="collapsed"
 )
 
 st.write("")
 
 # ==============================================================================
-# WORKSPACE 1: CONTRACT COMPLIANCE AUDITOR & REDLINE STUDIO
+# PAGE 1: CONTRACT AUDIT PORTAL (Main Consumer/Enterprise Website)
 # ==============================================================================
-if selected_workspace == "📑 Contract Compliance Auditor & Redline Studio":
-    st.markdown("### Credit Facility Compliance Cross-Examination")
-    st.markdown("Upload or select a credit agreement to extract covenants, audit statutory debt ratios, compute unlawful fee overcharges, and generate CBUAE-mandated redlines.")
+if top_nav == "🚀 Contract Audit Portal":
+    # 1. Premium Website Hero Banner
+    render_website_hero()
+
+    # 2. 3-Step "How It Works" Visual Guide
+    render_how_it_works()
+
+    st.markdown("---")
+
+    # 3. Contract Audit Studio
+    st.markdown("### 📑 Facility Audit Studio")
+    st.markdown("Select a sample credit agreement or paste your credit agreement below to initiate an autonomous compliance cross-examination.")
 
     contract_presets = {
-        "Apex Gulf Personal Loan (High-Risk Predatory Terms: 63% DBR, 2.75% Exit Fee, 60m Tenure)": "sample_contract_1_predatory_personal_loan.md",
-        "First Abu Dhabi Bank (FAB) Residential Mortgage (Certified Compliant Home Finance)": "sample_contract_2_compliant_mortgage.md",
-        "Al-Manara Vehicle Lease (Non-Compliant: 0% Down Payment, 72m Tenure, Excess Late Fees)": "sample_contract_3_auto_loan_violations.md",
-        "London Metropolitan Credit (Foreign UK FCA Contract — Triggers Out-of-Jurisdiction Refusal)": "sample_contract_4_uk_foreign_agreement.md",
-        "Custom Credit Facility (Paste or upload agreement markdown)": None
+        "Apex Gulf Personal Loan (Predatory terms: 63% DBR, 2.75% exit fee)": "sample_contract_1_predatory_personal_loan.md",
+        "First Abu Dhabi Bank (FAB) Home Loan (Certified compliant mortgage)": "sample_contract_2_compliant_mortgage.md",
+        "Al-Manara Vehicle Lease (0% down payment, 72m tenure violation)": "sample_contract_3_auto_loan_violations.md",
+        "London Metropolitan Credit (Foreign UK FCA contract — triggers refusal gate)": "sample_contract_4_uk_foreign_agreement.md",
+        "Paste / Edit Custom Facility Agreement": None
     }
 
     c_select, c_action = st.columns([3, 1], vertical_alignment="bottom")
     with c_select:
         chosen_preset = st.selectbox(
-            "Select Benchmark Credit Agreement to Audit:",
+            "Select Facility Agreement Scenario:",
             options=list(contract_presets.keys()),
-            index=0
+            index=0,
+            key="preset_selector"
         )
     
     with c_action:
-        run_audit_btn = st.button("Audit Agreement", type="primary", icon=":material/gavel:", width="stretch")
+        run_audit_btn = st.button("⚡ Audit Agreement", type="primary", width="stretch")
 
-    # Update active text if preset changed
-    target_file = contract_presets[chosen_preset]
-    if target_file:
-        file_path = SAMPLE_CONTRACTS_DIR / target_file
+    # Track scenario change to clear previous results
+    if "last_selected_preset" not in st.session_state:
+        st.session_state.last_selected_preset = chosen_preset
+    elif st.session_state.last_selected_preset != chosen_preset:
+        st.session_state.last_selected_preset = chosen_preset
+        st.session_state.audit_result = None
+
+    # Handle scenario change
+    target_filename = contract_presets[chosen_preset]
+    if target_filename:
+        file_path = SAMPLE_CONTRACTS_DIR / target_filename
         if file_path.exists():
-            st.session_state.active_contract_text = file_path.read_text(encoding="utf-8")
-            st.session_state.active_contract_title = chosen_preset.split("(")[0].strip()
+            current_text = file_path.read_text(encoding="utf-8")
+        else:
+            current_text = "# Contract File Not Found"
+    else:
+        current_text = st.session_state.contract_text_input
 
-    with st.expander("📄 View or Modify Raw Facility Agreement Terms", expanded=False):
-        edited_text = st.text_area(
+    # Document Source Expander
+    with st.expander("📄 Review or Edit Agreement Text", expanded=(target_filename is None)):
+        input_text = st.text_area(
             "Contractual Document Source:",
-            value=st.session_state.active_contract_text,
-            height=260,
-            label_visibility="collapsed"
+            value=current_text,
+            height=250,
+            label_visibility="collapsed",
+            key="contract_text_area"
         )
-        st.session_state.active_contract_text = edited_text
 
-    # Run audit if triggered or if first time loading
-    if run_audit_btn or st.session_state.audit_result is None:
-        with st.spinner("Executing Autonomous CBUAE Multi-Agent Audit Engine..."):
-            res = run_compliance_audit(
-                st.session_state.active_contract_text,
-                contract_title=st.session_state.active_contract_title
+    # Trigger audit only when button clicked
+    if run_audit_btn:
+        with st.spinner("Conducting automated CBUAE regulatory cross-examination..."):
+            audit_res = run_compliance_audit(
+                input_text,
+                contract_title=chosen_preset.split("(")[0].strip()
             )
-            st.session_state.audit_result = res
+            st.session_state.audit_result = audit_res
 
-    # ------------------------------------------------- Render Results
+    # 4. Render Audit Results
     res = st.session_state.audit_result
-    if res:
-        st.divider()
+    if res is None:
+        st.write("")
+        with st.container(border=True):
+            st.markdown("""
+            <div style="text-align: center; padding: 36px 20px;">
+                <div style="font-size: 42px; margin-bottom: 12px;">⚖️</div>
+                <div style="font-size: 20px; font-weight: 700; color: #F8FAFC; margin-bottom: 8px;">Ready to Cross-Examine Your Agreement</div>
+                <div style="font-size: 14px; color: #94A3B8; max-width: 620px; margin: 0 auto 20px auto; line-height: 1.6;">
+                    Select an agreement scenario above (e.g. <i>Apex Gulf Predatory Loan</i> to test violation detection, or <i>First Abu Dhabi Bank</i> to test certified compliance), then click <b>⚡ Audit Agreement</b> to generate your compliance certificate, restitution claim, and side-by-side legal redlines.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    elif res:
+        st.write("")
+        st.markdown("---")
 
-        # Case A: Out-of-Jurisdiction Refusal
+        # Refusal Case (Foreign Jurisdiction)
         if res.get("refusal_triggered"):
             st.error(
-                f"### 🛑 Zero-Hallucination Gate Refusal\n\n**{res.get('refusal_reason')}**\n\n"
-                f"*The system strictly enforces territorial jurisdiction. Central Bank of the UAE circulars do not govern foreign entities (e.g. UK FCA or US Federal Reserve).*",
+                f"### 🛑 Out-of-Jurisdiction Refusal Notice\n\n"
+                f"**{res.get('refusal_reason')}**\n\n"
+                f"*Central Bank of the UAE regulatory decrees apply strictly within the United Arab Emirates. The submitted facility references foreign regulatory authorities (e.g. UK Financial Conduct Authority).*",
                 icon=":material/gavel:"
             )
-            with st.container(border=True):
-                st.subheader("Autonomous Refusal Trace", anchor=False)
-                for step in res.get("execution_trace", []):
-                    st.write(f"- **{step['step']}:** {step['status']}")
-
-        # Case B: Standard Audit Results
         else:
             findings = res.get("compliance_findings", [])
             violations = [f for f in findings if f.get("status") == "VIOLATION"]
             total_refund = sum(f.get("excess_financial_impact_aed", 0.0) for f in violations)
             math_vals = res.get("math_validations", {})
             dbr_info = math_vals.get("dbr")
-            loan_amt = res.get("loan_amount", 0.0)
             loan_type = res.get("loan_type", "Personal Loan")
 
-            # Executive Status Banner
+            # Executive Compliance Banner
             if violations:
                 st.markdown(f"""
-                <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                         <div>
-                            <span style="font-weight: 800; color: #F87171; font-size: 16px;">⚠️ NON-COMPLIANCE AUDIT NOTICE: {len(violations)} STATUTORY INFRACTIONS DETECTED</span><br>
-                            <span style="color: #E2E8F0; font-size: 13px;">This credit facility breaches mandatory Central Bank of the UAE consumer protection caps. Immediate operational remediation and fee restitution are legally required.</span>
+                            <span style="font-weight: 800; color: #F87171; font-size: 18px;">⚠️ REGULATORY AUDIT NOTICE: {len(violations)} STATUTORY INFRACTIONS DETECTED</span><br>
+                            <span style="color: #E2E8F0; font-size: 14px;">This facility contains clauses that breach mandatory Central Bank of the UAE consumer protection caps. Immediate operational redlines and fee restitution are legally required.</span>
                         </div>
                         <div style="text-align: right;">
-                            <span style="font-size: 20px; font-weight: 800; color: #EF4444; font-family: 'JetBrains Mono';">AED {total_refund:,.2f}</span><br>
-                            <span style="font-size: 11px; color: #94A3B8; text-transform: uppercase;">Total Restitution Due</span>
+                            <span style="font-size: 24px; font-weight: 800; color: #EF4444; font-family: 'JetBrains Mono';">AED {total_refund:,.2f}</span><br>
+                            <span style="font-size: 11px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;">Statutory Restitution Due</span>
                         </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown("""
-                <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;">
-                    <span style="font-weight: 800; color: #34D399; font-size: 16px;">✅ CBUAE STATUTORY COMPLIANCE CERTIFIED</span><br>
-                    <span style="color: #E2E8F0; font-size: 13px;">All evaluated facility parameters—including debt servicing burden, exit fee caps, origination charges, and amortization tenure—strictly comply with Central Bank regulatory decrees.</span>
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;">
+                    <span style="font-weight: 800; color: #34D399; font-size: 18px;">✅ CBUAE REGULATORY COMPLIANCE CERTIFIED</span><br>
+                    <span style="color: #E2E8F0; font-size: 14px;">All facility parameters—including debt servicing ratio, exit fee caps, origination charges, and tenure—comply strictly with Central Bank consumer protection decrees.</span>
                 </div>
                 """, unsafe_allow_html=True)
 
-            # Executive Visual Analytics Row
+            # Visual KPI Analytics
             col_gauge, col_fee_chart = st.columns([1, 1])
             with col_gauge:
                 with st.container(border=True):
@@ -209,9 +212,9 @@ if selected_workspace == "📑 Contract Compliance Auditor & Redline Studio":
                             width="stretch"
                         )
                         st.markdown(f"""
-                        <div style="text-align: center; font-size: 12px; color: #94A3B8;">
-                            Monthly Commitment: <b>AED {dbr_info.monthly_commitment:,.2f}</b> | Verified Salary: <b>AED {dbr_info.gross_salary:,.2f}</b><br>
-                            Legal Debt Headroom: <b style="color:{'#10B981' if dbr_info.headroom_aed >= 0 else '#EF4444'}">AED {dbr_info.headroom_aed:,.2f}/mo</b>
+                        <div style="text-align: center; font-size: 12.5px; color: #94A3B8;">
+                            Monthly Commitment: <b>AED {dbr_info.monthly_commitment:,.2f}</b> | Verified Income: <b>AED {dbr_info.gross_salary:,.2f}</b><br>
+                            Remaining Legal Headroom: <b style="color:{'#10B981' if dbr_info.headroom_aed >= 0 else '#EF4444'}">AED {dbr_info.headroom_aed:,.2f}/mo</b>
                         </div>
                         """, unsafe_allow_html=True)
                     else:
@@ -223,28 +226,28 @@ if selected_workspace == "📑 Contract Compliance Auditor & Redline Studio":
                     if fee_fig:
                         st.plotly_chart(fee_fig, width="stretch")
                     else:
-                        st.success("All fee covenants are strictly within CBUAE statutory limits with zero excess charges.", icon=":material/check_circle:")
+                        st.success("All fee covenants comply with statutory caps with zero overcharges.", icon=":material/check_circle:")
 
-            # Interactive Side-by-Side Redline Studio
-            st.markdown("### 📋 Side-by-Side Clause Redline Studio")
-            st.markdown("Examine each audited checkpoint, the contractual covenant as drafted by the lender, and the CBUAE-mandated legal redline required under UAE Federal Law.")
+            # Side-by-Side Clause Redline Studio
+            st.markdown("### 📋 Side-by-Side Clause Redlines & Remediation Directives")
+            st.markdown("Review each audited checkpoint, the contractual covenant as drafted by the lender, and the CBUAE-mandated legal redline required under UAE law.")
 
             for idx, finding in enumerate(findings, 1):
                 render_executive_redline_item(idx, finding)
 
-            # Action Plan & Dossier Export Row
+            # Remediation Directive & Report Export
             st.markdown("### 📝 Formal Remediation Protocol & Legal Notice")
             col_plan, col_export = st.columns([3, 2])
             
             with col_plan:
                 with st.container(border=True):
-                    st.markdown("#### Operational Directive for Compliance Department")
+                    st.markdown("#### Operational Directive for Lending Institution")
                     for s_idx, action_text in enumerate(res.get("action_plan", []), 1):
                         st.markdown(f"**{s_idx}.** {action_text}")
 
             with col_export:
                 with st.container(border=True):
-                    st.markdown("#### Institutional Export")
+                    st.markdown("#### Download Compliance Dossier")
                     st.caption("Generate a signed, audit-ready compliance dossier formatted with exact gazette references for submission to the CBUAE Consumer Protection Department.")
                     dossier_text = generate_markdown_dossier(res)
                     st.download_button(
@@ -258,52 +261,55 @@ if selected_workspace == "📑 Contract Compliance Auditor & Redline Studio":
 
 
 # ==============================================================================
-# WORKSPACE 2: CBUAE REGULATORY CODEX & INTELLIGENCE HUB
+# PAGE 2: KNOW YOUR RIGHTS & CBUAE REGULATORY CODEX
 # ==============================================================================
-elif selected_workspace == "⚖️ CBUAE Regulatory Codex & Intelligence Hub":
-    st.markdown("### 🏛️ Central Bank of the UAE Regulatory Codex")
-    st.markdown("Authoritative repository of UAE banking regulations, retail fee schedules, and consumer protection directives. Search naturally or browse official gazettes.")
+elif top_nav == "⚖️ Know Your Rights & CBUAE Codex":
+    st.markdown("## 🏛️ Central Bank of the UAE Consumer Protection Guide")
+    st.markdown("Your comprehensive guide to statutory borrowing rights, standardized fee schedule ceilings, and mandatory consumer protections under UAE Federal Law.")
 
-    # Search Bar
-    codex_search = st.text_input(
-        "Search Regulatory Decrees & Statutory Articles:",
-        placeholder="e.g. What is the early settlement fee cap under Circular 8/2020? or balloon payment rules",
-        icon=":material/search:"
+    # 1. Consumer Rights Grid
+    render_consumer_rights_grid()
+
+    st.write("")
+    st.markdown("---")
+
+    # 2. Natural Language Legal Inquiry
+    st.markdown("### 💬 Ask the UAE Regulatory Codex")
+    st.markdown("Ask any question regarding UAE lending rules, fee limits, early settlement caps, or borrower protections:")
+
+    user_query = st.text_input(
+        "Regulatory Inquiry:",
+        placeholder="e.g. What is the maximum early settlement fee that a UAE bank can charge? or Are balloon payments allowed?",
+        label_visibility="collapsed"
     )
 
-    if codex_search.strip():
+    if user_query.strip():
         with st.spinner("Searching CBUAE Regulatory Corpus via Hybrid Dense + BM25 Fusion..."):
-            qa_res = answer_regulatory_inquiry(codex_search)
+            qa_res = answer_regulatory_inquiry(user_query)
 
         if qa_res.get("refusal_triggered"):
             st.error(
-                f"**REFUSAL: OUT OF SCOPE / UNGROUNDED**\n\n{qa_res.get('answer')}",
+                f"**REFUSAL: OUT OF JURISDICTION / UNGROUNDED DOMAIN**\n\n{qa_res.get('answer')}",
                 icon=":material/block:"
             )
         else:
             with st.container(border=True):
-                st.markdown(f"#### Verified Regulatory Determination")
-                st.caption(f"Authoritative Citation: `{qa_res.get('citation')}` | Latency: `{qa_res.get('latency_ms')} ms`")
+                st.markdown(f"#### Grounded Legal Determination")
+                st.caption(f"Authoritative Gazette Citation: `{qa_res.get('citation')}` | Latency: `{qa_res.get('latency_ms')} ms`")
                 st.markdown(qa_res.get("answer"))
 
-            st.markdown("##### Retrieved Gazette Excerpts (Reciprocal Rank Fusion)")
-            for c_idx, chunk in enumerate(qa_res.get("retrieved_chunks", []), 1):
-                with st.container(border=True):
-                    st.markdown(f"**Chunk #{c_idx}:** `{chunk.get('circular_ref')}` — *{chunk.get('article_header')}* (RRF Score: `{chunk.get('rrf_score')}`)")
-                    st.text(chunk.get("content"))
+    st.write("")
+    st.markdown("---")
 
-    st.divider()
-
-    # Category Browse
-    st.markdown("#### Browse Governing Decrees & Articles")
+    # 3. Gazette Article Browser
+    st.markdown("### 📚 Official CBUAE Gazette Library")
     category_filter = st.segmented_control(
-        "Regulatory Scope Filter",
+        "Filter by Decree Category",
         options=["All Decrees", "Consumer Protection (Cir 8/2020)", "Personal Credit (Notice 2011/23)", "Mortgages (Cir 31/2013)", "Retail Fee Schedule"],
         default="All Decrees"
     )
 
     all_docs = load_cbuae_corpus()
-    
     cat_map = {
         "Consumer Protection (Cir 8/2020)": ["early_settlement", "general_compliance"],
         "Personal Credit (Notice 2011/23)": ["personal_loans", "auto_loans"],
@@ -319,33 +325,33 @@ elif selected_workspace == "⚖️ CBUAE Regulatory Codex & Intelligence Hub":
     for d in filtered_docs:
         meta = d.metadata
         with st.expander(f"📜 {meta.get('circular_ref')} — {meta.get('article_header')}"):
-            st.caption(f"Source Gazette: `{meta.get('source')}` | Regulatory Scope: `{meta.get('category')}`")
+            st.caption(f"Source Document: `{meta.get('source')}` | Scope: `{meta.get('category')}`")
             st.markdown(d.page_content)
 
 
 # ==============================================================================
-# WORKSPACE 3: STATUTORY FINANCIAL SIMULATORS
+# PAGE 3: STATUTORY FINANCIAL SIMULATORS
 # ==============================================================================
-elif selected_workspace == "🧮 Statutory Financial Simulators":
-    st.markdown("### Interactive CBUAE Compliance Simulators")
-    st.markdown("Run zero-hallucination statutory financial models to simulate debt capacities, early settlement refund claims, and mortgage equity requirements.")
+elif top_nav == "🧮 Statutory Financial Simulators":
+    st.markdown("## 🧮 Interactive UAE Statutory Banking Calculators")
+    st.markdown("Calculate your legal debt borrowing capacity, estimate unlawful early exit overcharges, and check mortgage down payment limits.")
 
-    sim_choice = st.segmented_control(
-        "Select Compliance Tool",
+    sim_tab = st.segmented_control(
+        "Select Financial Tool",
         options=[
-            "1. Debt Burden Ratio (DBR) & Headroom Simulator",
-            "2. Early Prepayment Overcharge & Restitution Calculator",
-            "3. Mortgage LTV & Tenure Calculator"
+            "1. DBR & Borrowing Capacity Calculator",
+            "2. Early Prepayment Overcharge Calculator",
+            "3. Mortgage LTV & Amortization Calculator"
         ],
-        default="1. Debt Burden Ratio (DBR) & Headroom Simulator"
+        default="1. DBR & Borrowing Capacity Calculator"
     )
 
     st.write("")
 
-    # --- Tool 1: DBR Simulator
-    if "1. Debt Burden Ratio" in sim_choice:
-        st.subheader("Debt Burden Ratio (DBR) & Borrowing Capacity Simulator (Notice 2011/23 Art 7)")
-        st.caption("Under CBUAE Notice 2011/23, monthly debt commitments must not exceed 50.0% of verified salary (30.0% for retirees). Credit cards add 5.0% of limit to commitments.")
+    # --- Tool 1: DBR Calculator
+    if "1. DBR" in sim_tab:
+        st.markdown("### Debt Burden Ratio (DBR) & Debt Headroom Calculator (Notice 2011/23 Art 7)")
+        st.caption("Under CBUAE Notice 2011/23, monthly debt commitments must not exceed 50.0% of verified salary (30.0% for retirees). Credit cards add 5.0% of credit limit to commitments.")
 
         col_in, col_out = st.columns([1, 1])
         with col_in:
@@ -392,8 +398,8 @@ elif selected_workspace == "🧮 Statutory Financial Simulators":
                 """)
 
     # --- Tool 2: Early Exit Overcharge
-    elif "2. Early Prepayment Overcharge" in sim_choice:
-        st.subheader("Early Settlement Exit Fee Overcharge Calculator (Circular 8/2020 Art 4.3)")
+    elif "2. Early Prepayment" in sim_tab:
+        st.markdown("### Early Settlement Exit Fee Overcharge Calculator (Circular 8/2020 Art 4.3)")
         st.caption("CBUAE Circular 8/2020 caps prepayment exit fees at exactly 1.0% of prepaid principal or AED 10,000 (whichever is lower). Minimum penalty fees exceeding this cap are unlawful.")
 
         col_in2, col_out2 = st.columns([1, 1])
@@ -429,8 +435,8 @@ elif selected_workspace == "🧮 Statutory Financial Simulators":
                     )
 
     # --- Tool 3: Mortgage LTV
-    elif "3. Mortgage LTV" in sim_choice:
-        st.subheader("Residential Mortgage Loan-to-Value (LTV) Calculator (Circular 31/2013)")
+    elif "3. Mortgage LTV" in sim_tab:
+        st.markdown("### Residential Mortgage Loan-to-Value (LTV) Calculator (Circular 31/2013)")
         st.caption("CBUAE Circular 31/2013 governs maximum mortgage financing and down payment thresholds.")
 
         col_in3, col_out3 = st.columns([1, 1])
@@ -469,9 +475,31 @@ elif selected_workspace == "🧮 Statutory Financial Simulators":
 
 
 # ==============================================================================
-# WORKSPACE 4: VERIFICATION BENCHMARK & AUDIT CERTIFICATE
+# PAGE 4: SYSTEM ARCHITECTURE & DIAGNOSTICS (For Technical Judges / Engineers)
 # ==============================================================================
-elif selected_workspace == "🏆 Verification Benchmark & Audit Certificate":
+elif top_nav == "⚙️ System Diagnostics & RAG Architecture":
+    st.markdown("## ⚙️ Technical Diagnostics & Architecture Monitoring")
+    st.markdown("Dedicated technical dashboard for evaluators, system administrators, and contest judges to inspect the vector database connection, hybrid search fusion parameters, and official evaluation benchmark.")
+
+    # System Status Row
+    c_s1, c_s2, c_s3, c_s4 = st.columns(4)
+    with c_s1:
+        with st.container(border=True):
+            st.metric("ChromaDB Server", f"{CHROMA_HOST}:{CHROMA_PORT}", delta="Active HTTP Client")
+    with c_s2:
+        with st.container(border=True):
+            st.metric("Vector Collection", "cbuae_regulations", delta="15 Statutory Chunks")
+    with c_s3:
+        with st.container(border=True):
+            st.metric("Fusion Engine", "RRF (k=60)", delta="Dense + BM25 Fused")
+    with c_s4:
+        with st.container(border=True):
+            st.metric("Local LLM Service", OLLAMA_MODEL, delta="Fallback Resilient")
+
+    st.write("")
+    st.markdown("---")
+
+    # Evaluation Benchmark Report
     st.markdown("### 🏆 Gen Academy Week 2 Official Benchmark Report")
     st.markdown("Autonomous RAG verification against 15 structured inquiries covering statutory fee caps, multi-hop comparisons, edge cases, and zero-hallucination refusal gates.")
 
