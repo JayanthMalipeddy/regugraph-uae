@@ -5,8 +5,9 @@ deterministic statutory math, facility auditing, and hybrid regulatory search.
 import os
 import time
 from typing import List, Dict, Any, Optional
+import io
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -199,6 +200,85 @@ def get_sample_scenarios():
         })
 
     return {"scenarios": scenarios}
+
+
+@app.get("/api/sample-files")
+def list_sample_files():
+    """List all available sample Word (.docx) and PDF (.pdf) sanction documents."""
+    files = []
+    sample_dir = PROJECT_ROOT / "data" / "sample_documents"
+    if sample_dir.exists():
+        for f in sorted(sample_dir.glob("*.*")):
+            if f.suffix.lower() in [".docx", ".pdf"]:
+                files.append({
+                    "filename": f.name,
+                    "extension": f.suffix.lower().replace(".", ""),
+                    "size_kb": round(f.stat().st_size / 1024, 1),
+                    "download_url": f"/samples/{f.name}"
+                })
+    return {"sample_files": files}
+
+
+@app.post("/api/upload-document")
+async def upload_document(file: UploadFile = File(...)):
+    """Extract clean text from uploaded PDF, Word (.docx), or text-based documents."""
+    try:
+        content_bytes = await file.read()
+        filename = file.filename or "uploaded_document"
+        ext = filename.lower().split(".")[-1] if "." in filename else ""
+        extracted_text = ""
+
+        if ext == "pdf":
+            import pdfplumber
+            with pdfplumber.open(io.BytesIO(content_bytes)) as pdf:
+                parts = []
+                for page in pdf.pages:
+                    p_text = page.extract_text()
+                    if p_text:
+                        parts.append(p_text)
+                    tables = page.extract_tables()
+                    for table in tables:
+                        for row in table:
+                            if row:
+                                row_str = " | ".join([str(c).strip() if c is not None else "" for c in row if c])
+                                if row_str and row_str not in (p_text or ""):
+                                    parts.append(row_str)
+                extracted_text = "\n\n".join(parts)
+        elif ext in ("docx", "doc"):
+            import docx
+            doc = docx.Document(io.BytesIO(content_bytes))
+            parts = []
+            for p in doc.paragraphs:
+                if p.text.strip():
+                    parts.append(p.text.strip())
+            for t in doc.tables:
+                for r in t.rows:
+                    row_vals = [c.text.strip() for c in r.cells]
+                    dedup = []
+                    for v in row_vals:
+                        if not dedup or v != dedup[-1]:
+                            dedup.append(v)
+                    if dedup:
+                        parts.append(" | ".join(dedup))
+            extracted_text = "\n\n".join(parts)
+        else:
+            extracted_text = content_bytes.decode("utf-8", errors="ignore")
+
+        if not extracted_text.strip():
+            raise HTTPException(status_code=400, detail="Could not extract readable text from the uploaded document.")
+
+        return {
+            "status": "success",
+            "filename": filename,
+            "extension": ext,
+            "size_kb": round(len(content_bytes) / 1024, 1),
+            "character_count": len(extracted_text),
+            "extracted_text": extracted_text
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse document: {str(e)}")
 
 
 @app.post("/api/audit")
@@ -470,8 +550,13 @@ def get_benchmark_results():
     }
 
 
+# Mount sample files static directory
+from fastapi.staticfiles import StaticFiles
+SAMPLE_DOCS_DIR = PROJECT_ROOT / "data" / "sample_documents"
+if SAMPLE_DOCS_DIR.exists():
+    app.mount("/samples", StaticFiles(directory=str(SAMPLE_DOCS_DIR)), name="sample_docs")
+
 # Mount production frontend single page application if built
 FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
 if FRONTEND_DIST.exists():
-    from fastapi.staticfiles import StaticFiles
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")

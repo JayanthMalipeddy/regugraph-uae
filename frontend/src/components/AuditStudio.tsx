@@ -42,6 +42,7 @@ export const AuditStudio: React.FC<AuditStudioProps> = ({ scenarios, onNavigateT
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [uploadedFileSize, setUploadedFileSize] = useState<string | null>(null);
   const [selectedSampleId, setSelectedSampleId] = useState<string>('scenario-1');
+  const [isUploadingDocument, setIsUploadingDocument] = useState<boolean>(false);
 
   // Borrower simple inputs (Human friendly, no technical jargon!)
   const [bankName, setBankName] = useState<string>('Apex Gulf Finance');
@@ -113,45 +114,61 @@ Governing Law: Central Bank of the United Arab Emirates.`;
     handleAudit(text, `${bankName} ${loanType}`);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processSelectedFile = async (file: File) => {
     setUploadedFileName(file.name);
     const sizeKb = (file.size / 1024).toFixed(1);
     setUploadedFileSize(`${sizeKb} KB`);
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        setContractText(content);
-        setActiveBannerMessage(`Sanction document loaded: ${file.name} (${sizeKb} KB)`);
+    // If PDF or Word (.docx, .doc), use backend parser
+    if (ext === 'pdf' || ext === 'docx' || ext === 'doc') {
+      setIsUploadingDocument(true);
+      setActiveBannerMessage(`Extracting contractual terms from ${file.name}...`);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload-document', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok && data.extracted_text) {
+          setContractText(data.extracted_text);
+          setUploadedFileSize(`${data.size_kb} KB (${data.character_count} chars extracted)`);
+          setActiveBannerMessage(`Sanction document loaded: ${file.name} (${data.size_kb} KB)`);
+        } else {
+          throw new Error(data.detail || 'Could not parse document');
+        }
+      } catch (err: any) {
+        alert('Failed to parse document: ' + (err.message || err));
+      } finally {
+        setIsUploadingDocument(false);
         setTimeout(() => setActiveBannerMessage(null), 5000);
       }
-    };
-    reader.readAsText(file);
+    } else {
+      // Plain text, markdown, rtf, json
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        if (content) {
+          setContractText(content);
+          setActiveBannerMessage(`Sanction document loaded: ${file.name} (${sizeKb} KB)`);
+          setTimeout(() => setActiveBannerMessage(null), 5000);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processSelectedFile(file);
   };
 
   const handleDropFile = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (!file) return;
-
-    setUploadedFileName(file.name);
-    const sizeKb = (file.size / 1024).toFixed(1);
-    setUploadedFileSize(`${sizeKb} KB`);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        setContractText(content);
-        setActiveBannerMessage(`Sanction document loaded: ${file.name} (${sizeKb} KB)`);
-        setTimeout(() => setActiveBannerMessage(null), 5000);
-      }
-    };
-    reader.readAsText(file);
+    if (file) processSelectedFile(file);
   };
 
   const sampleSanctionDocuments = [
@@ -163,7 +180,10 @@ Governing Law: Central Bank of the United Arab Emirates.`;
       badge: '🔴 Overcharge & Tenure Violation',
       badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
       description: 'Unlawful 3% prepayment exit fee (AED 12k vs AED 4k cap) and 60-month tenure cap violation.',
-      expected: 'Non-Compliant (+AED 16,050 Restitution)'
+      expected: 'Non-Compliant (+AED 16,050 Restitution)',
+      docxUrl: '/samples/01_Apex_Gulf_Finance_Personal_Loan_Sanction.docx',
+      pdfUrl: '/samples/01_Apex_Gulf_Finance_Personal_Loan_Sanction.pdf',
+      docName: '01_Apex_Gulf_Finance_Personal_Loan_Sanction'
     },
     {
       id: 'scenario-2',
@@ -173,7 +193,10 @@ Governing Law: Central Bank of the United Arab Emirates.`;
       badge: '🟢 100% Fully Compliant',
       badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
       description: 'First home mortgage strictly adhering to Notice 3877/2019, 25-yr tenure cap, and 1% fee cap.',
-      expected: 'Fully Compliant (AED 0 Restitution)'
+      expected: 'Fully Compliant (AED 0 Restitution)',
+      docxUrl: '/samples/02_Emirates_First_Bank_Mortgage_Facility.docx',
+      pdfUrl: '/samples/02_Emirates_First_Bank_Mortgage_Facility.pdf',
+      docName: '02_Emirates_First_Bank_Mortgage_Facility'
     },
     {
       id: 'scenario-3',
@@ -183,7 +206,10 @@ Governing Law: Central Bank of the United Arab Emirates.`;
       badge: '🔴 72-Mo Tenure Breach',
       badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
       description: 'Vehicle credit facility containing 72-month tenure breach and compounding late fee.',
-      expected: 'Tenure Infraction (+AED 2,250 Restitution)'
+      expected: 'Tenure Infraction (+AED 2,250 Restitution)',
+      docxUrl: '/samples/03_Falcon_Auto_Credit_Subprime_Facility.docx',
+      pdfUrl: '/samples/03_Falcon_Auto_Credit_Subprime_Facility.pdf',
+      docName: '03_Falcon_Auto_Credit_Subprime_Facility'
     },
     {
       id: 'scenario-5',
@@ -193,7 +219,10 @@ Governing Law: Central Bank of the United Arab Emirates.`;
       badge: '🔴 74.7% DBR Ceiling Breach',
       badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
       description: 'Consolidated debt commitments pushing DBR to 74.7%, breaching CBUAE 50% cap under Notice 2011/23.',
-      expected: 'Severe DBR Breach (Sanctions Risk)'
+      expected: 'Severe DBR Breach (Sanctions Risk)',
+      docxUrl: '/samples/04_Dubai_Crescent_Consolidated_Credit_Facility.docx',
+      pdfUrl: '/samples/04_Dubai_Crescent_Consolidated_Credit_Facility.pdf',
+      docName: '04_Dubai_Crescent_Consolidated_Credit_Facility'
     },
     {
       id: 'scenario-4',
@@ -203,7 +232,10 @@ Governing Law: Central Bank of the United Arab Emirates.`;
       badge: '🟡 Jurisdiction Refusal Gate',
       badgeClass: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
       description: 'Out-of-jurisdiction agreement governed by UK FCA. Triggers autonomous CBUAE refusal gate.',
-      expected: 'Autonomous Refusal Gate'
+      expected: 'Autonomous Refusal Gate',
+      docxUrl: '/samples/05_Barclays_Bank_UK_Consumer_Credit_Facility.docx',
+      pdfUrl: '/samples/05_Barclays_Bank_UK_Consumer_Credit_Facility.pdf',
+      docName: '05_Barclays_Bank_UK_Consumer_Credit_Facility'
     }
   ];
 
@@ -1436,9 +1468,10 @@ Governing Law: Central Bank of the United Arab Emirates.`;
                     {sampleSanctionDocuments.map((s) => {
                       const isSelected = selectedSampleId === s.id;
                       return (
-                        <button
+                        <div
                           key={s.id}
-                          type="button"
+                          role="button"
+                          tabIndex={0}
                           onClick={() => handleSelectSampleSanction(s.id)}
                           className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                             isSelected
@@ -1455,16 +1488,45 @@ Governing Law: Central Bank of the United Arab Emirates.`;
                             </div>
                             <div className="text-xs font-bold text-white line-clamp-1">{s.title}</div>
                             <div className="text-[10px] text-slate-400 line-clamp-1">{s.description}</div>
+                            <div className="text-[10px] text-cyan-300 font-mono font-medium pt-0.5">{s.expected}</div>
                           </div>
-                          <div className="mt-1.5 pt-1.5 border-t border-slate-800/60 flex items-center justify-between text-[10px]">
-                            <span className="text-cyan-300 font-mono font-medium">{s.expected}</span>
-                            <span className={`font-bold ${isSelected ? 'text-cyan-400' : 'text-slate-500'}`}>
+                          
+                          {/* Sample Download Links (Word DOCX & PDF) */}
+                          <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px]" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-1.5">
+                              <a
+                                href={s.docxUrl}
+                                download={`${s.docName}.docx`}
+                                className="px-2 py-0.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                                title="Download editable Word document"
+                              >
+                                <FileText className="h-2.5 w-2.5" /> Word (.docx)
+                              </a>
+                              <a
+                                href={s.pdfUrl}
+                                download={`${s.docName}.pdf`}
+                                className="px-2 py-0.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                                title="Download print-ready PDF"
+                              >
+                                <Download className="h-2.5 w-2.5" /> PDF (.pdf)
+                              </a>
+                            </div>
+                            <span className={`font-bold text-[10px] ${isSelected ? 'text-cyan-400' : 'text-slate-500'}`}>
                               {isSelected ? 'Selected ✓' : 'Load →'}
                             </span>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* Local Downloads Folder Guidance Note */}
+                <div className="bg-cyan-950/30 border border-cyan-500/30 rounded-2xl p-3 flex items-start gap-2.5 text-xs text-slate-300">
+                  <Sparkles className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-white">5 Sample Documents Ready in Your Downloads: </span>
+                    All 5 test sanction files (.docx &amp; .pdf) are also pre-generated directly in your Windows Downloads folder (<code className="text-cyan-300 font-mono text-[10px]">C:\Users\999379\Downloads\</code>). You can drag and drop any file directly into the box below!
                   </div>
                 </div>
 
@@ -1485,7 +1547,7 @@ Governing Law: Central Bank of the United Arab Emirates.`;
                   <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDropFile}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => !isUploadingDocument && fileInputRef.current?.click()}
                     className="border-2 border-dashed border-slate-800 hover:border-cyan-500/60 rounded-2xl p-4 text-center bg-[#0a0f1d]/60 hover:bg-[#0a0f1d] transition-all cursor-pointer group"
                   >
                     <input
@@ -1495,13 +1557,22 @@ Governing Law: Central Bank of the United Arab Emirates.`;
                       accept=".txt,.pdf,.doc,.docx,.md,.json,.rtf"
                       className="hidden"
                     />
-                    <Upload className="h-6 w-6 text-slate-500 group-hover:text-cyan-400 mx-auto mb-1.5 transition-colors" />
-                    <div className="text-xs font-semibold text-white">
-                      Drop sanction document here, or <span className="text-cyan-400 underline">browse</span>
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">
-                      Supports PDF, Word (.doc, .docx), Text (.txt, .md), and RTF files
-                    </div>
+                    {isUploadingDocument ? (
+                      <div className="py-2 flex flex-col items-center justify-center text-cyan-400">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-cyan-400 border-t-transparent mb-2" />
+                        <span className="text-xs font-semibold">Extracting clauses &amp; parameters from document...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-6 w-6 text-slate-500 group-hover:text-cyan-400 mx-auto mb-1.5 transition-colors" />
+                        <div className="text-xs font-semibold text-white">
+                          Drop sanction document here, or <span className="text-cyan-400 underline">browse</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">
+                          Supports PDF (.pdf), Word (.docx, .doc), Text (.txt, .md), and RTF files
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
