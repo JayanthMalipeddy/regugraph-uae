@@ -521,6 +521,206 @@ Governing Law: Central Bank of the United Arab Emirates.`;
       </div>
 
       {/* ============================================================== */}
+      {/* ENTERPRISE INSIGHTS & OPERATIONS SUITE (Demonstrates FinTech Capabilities) */}
+      {/* ============================================================== */}
+      <div className="space-y-6 pt-4 border-t border-slate-800/80">
+        
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                Institutional Operations Hub
+              </span>
+              <span className="text-xs text-slate-400 font-medium">UAE Banking Surveillance & Grievance Tracking</span>
+            </div>
+            <h2 className="text-lg font-bold text-white mt-1">
+              Active Banking Portfolio & Sanadak Dispute Insights
+            </h2>
+          </div>
+          
+          <div className="text-xs text-slate-400">
+            Portfolio Health: <strong className="text-emerald-400 font-mono">94.2% Compliant</strong>
+          </div>
+        </div>
+
+        {/* 4 Key Portfolio Metrics Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 space-y-1">
+            <span className="text-[11px] font-medium text-slate-400">Total Unlawful Overcharges Detected</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-amber-400">
+              AED 18,300.00
+            </div>
+            <p className="text-[10px] text-slate-500">Across 3 commercial facilities</p>
+          </div>
+
+          <div className="p-4 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 space-y-1">
+            <span className="text-[11px] font-medium text-slate-400">Restitution Recovered to Date</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-emerald-400">
+              AED 14,050.00
+            </div>
+            <p className="text-[10px] text-slate-500">Credited to borrower accounts</p>
+          </div>
+
+          <div className="p-4 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 space-y-1">
+            <span className="text-[11px] font-medium text-slate-400">Active Facilities Monitored</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-white">
+              3 Banking Lines
+            </div>
+            <p className="text-[10px] text-slate-500">Personal, Mortgage & Auto</p>
+          </div>
+
+          <div className="p-4 rounded-3xl bg-[#0f172a]/60 border border-slate-800/90 space-y-1">
+            <span className="text-[11px] font-medium text-slate-400">Corporate Debt Burden Ratio</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-cyan-400">
+              33.8% DBR
+            </div>
+            <p className="text-[10px] text-slate-500">Notice 2011/23 Safe Range (&lt;40%)</p>
+          </div>
+        </div>
+
+        {/* Two Column Grid: Sanadak Grievance Pipeline (Left) + UAE Bank Compliance Index (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Sanadak Dispute Tracking Pipeline (7 cols) */}
+          <div className="lg:col-span-7 rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 p-6 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-white">CBUAE Sanadak Dispute Escalation Pipeline</h3>
+                <p className="text-[11px] text-slate-400">Formal consumer ombudsman complaint and refund tracking</p>
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                2 Active Filings
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3.5 rounded-2xl bg-[#0a0f1d]/70 border border-slate-800/70 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-white">#SND-2024-9182</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      Restitution Mandate Issued
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-300 mt-1">Apex Gulf Finance — Unlawful 3% Prepayment Exit Penalty</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Circular 8/2020 Art 4.3 • Filed 12 Sep 2024</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold">Award Amount</span>
+                  <div className="font-mono font-bold text-sm text-emerald-400">AED 12,000.00</div>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#0a0f1d]/70 border border-slate-800/70 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-white">#SND-2024-8441</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                      Refund Credited
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-300 mt-1">First Retail Credit — Excess Origination Processing Fee</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Circular 8/2020 Art 4.2 • Filed 28 Aug 2024</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold">Refund Credited</span>
+                  <div className="font-mono font-bold text-sm text-cyan-400">AED 2,050.00</div>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#0a0f1d]/70 border border-slate-800/70 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-white">#SND-2024-7729</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      Under Sanadak Mediation
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-300 mt-1">Falcon Auto Credit — 72-Month Statutory Tenure Breach</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Notice 2011/23 Art 5.1 • Filed 04 Oct 2024</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold">Claim Amount</span>
+                  <div className="font-mono font-bold text-sm text-amber-400">AED 4,250.00</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* UAE Bank Lending Compliance Index (5 cols) */}
+          <div className="lg:col-span-5 rounded-3xl bg-[#0f172a]/70 border border-slate-800/90 p-6 flex flex-col justify-between shadow-xl">
+            <div>
+              <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+                <h3 className="text-sm font-bold text-white">UAE Bank Compliance Index</h3>
+                <span className="text-[11px] text-slate-400">CBUAE Benchmark</span>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#0a0f1d]/60">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center border border-slate-800">
+                      FAB
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">First Abu Dhabi Bank</div>
+                      <div className="text-[10px] text-slate-400">Tier-1 Institutional Lender</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-extrabold text-emerald-400">98 / 100</span>
+                </div>
+
+                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#0a0f1d]/60">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center border border-slate-800">
+                      ENBD
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Emirates NBD</div>
+                      <div className="text-[10px] text-slate-400">Tier-1 Retail & Corporate</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-extrabold text-emerald-400">96 / 100</span>
+                </div>
+
+                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#0a0f1d]/60">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center border border-slate-800">
+                      FAC
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Falcon Auto Credit</div>
+                      <div className="text-[10px] text-amber-400">Subprime Vehicle Credit</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-extrabold text-amber-400">64 / 100</span>
+                </div>
+
+                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#0a0f1d]/60">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center border border-slate-800">
+                      AGF
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Apex Gulf Finance</div>
+                      <div className="text-[10px] text-rose-400">Critical Fee Breaches</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-extrabold text-rose-400">42 / 100</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-800/60 text-[10px] text-slate-500 font-mono">
+              Scored autonomously against CBUAE Circular 8/2020 & Consumer Standards
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* ============================================================== */}
       {/* HUMAN-FRIENDLY BORROWER AUDIT MODAL (Replaces Technical Jargon) */}
       {/* ============================================================== */}
       {showInputModal && (

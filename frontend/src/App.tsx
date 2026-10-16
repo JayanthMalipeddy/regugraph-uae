@@ -5,9 +5,17 @@ import { AuditStudio } from './components/AuditStudio';
 import { CalculatorsHub } from './components/CalculatorsHub';
 import { RegulatoryCodex } from './components/RegulatoryCodex';
 import { DiagnosticsHub } from './components/DiagnosticsHub';
+import { AuthModal } from './components/AuthModal';
 import { fetchHealth, fetchScenarios } from './services/api';
 import type { HealthStatus, ContractScenario } from './types';
 import { ShieldCheck, ExternalLink } from 'lucide-react';
+
+interface UserProfile {
+  name: string;
+  email: string;
+  organization: string;
+  role: string;
+}
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -15,6 +23,11 @@ export function App() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [scenarios, setScenarios] = useState<ContractScenario[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup'>('signin');
 
   // Initial load
   useEffect(() => {
@@ -48,6 +61,12 @@ export function App() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onSearchSubmit={handleGlobalSearch}
+          currentUser={currentUser}
+          onOpenAuth={(mode) => {
+            setAuthInitialMode(mode);
+            setIsAuthOpen(true);
+          }}
+          onLogout={() => setCurrentUser(null)}
         />
 
         {/* Content View */}
@@ -97,6 +116,17 @@ export function App() {
         </footer>
 
       </div>
+
+      {/* Institutional Enterprise Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          setIsAuthOpen(false);
+        }}
+        initialMode={authInitialMode}
+      />
 
     </div>
   );
