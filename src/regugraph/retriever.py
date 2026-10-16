@@ -8,6 +8,8 @@ from langchain_core.documents import Document
 
 from .config import (
     CHROMA_DIR,
+    CHROMA_HOST,
+    CHROMA_PORT,
     OLLAMA_BASE_URL,
     OLLAMA_EMBED_MODEL,
     TOP_K_DENSE,
@@ -64,7 +66,12 @@ class HybridRetriever:
     
     def __init__(self, collection_name: str = "cbuae_regulations"):
         self.collection_name = collection_name
-        self.chroma_client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+        try:
+            self.chroma_client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
+            self.chroma_client.heartbeat()
+        except Exception:
+            self.chroma_client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+
         self.embed_fn = RobustEmbeddingFunction()
         self.collection = self.chroma_client.get_or_create_collection(
             name=self.collection_name,

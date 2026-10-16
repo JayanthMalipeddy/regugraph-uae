@@ -52,7 +52,7 @@ with st.sidebar:
         else:
             st.info("Local LLM: Deterministic Engine Fallback", icon=":material/shield:")
         
-        st.success("Hybrid Vector Store: ChromaDB (Cosmic Cosine)", icon=":material/database:")
+        st.success("Hybrid Vector Store: ChromaDB Server (localhost:8081)", icon=":material/database:")
         st.success("Sparse Lexical Search: BM25 Okapi Active", icon=":material/search:")
         st.success("Fusion Engine: Reciprocal Rank Fusion (k=60)", icon=":material/sync_alt:")
         st.success("Math Engine: Zero-Hallucination Exact Caps", icon=":material/calculate:")

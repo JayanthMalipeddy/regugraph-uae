@@ -10,6 +10,10 @@ SAMPLE_CONTRACTS_DIR = DATA_DIR / "sample_contracts"
 CHROMA_DIR = PROJECT_ROOT / "chroma_db"
 EVALUATION_DIR = PROJECT_ROOT / "evaluation"
 
+# ChromaDB Server Settings (Connecting to local Chroma server on port 8081)
+CHROMA_HOST = os.environ.get("CHROMA_HOST", "localhost")
+CHROMA_PORT = int(os.environ.get("CHROMA_PORT", "8081"))
+
 # Ensure directories exist
 for p in [DATA_DIR, REGULATIONS_DIR, SAMPLE_CONTRACTS_DIR, CHROMA_DIR, EVALUATION_DIR]:
     p.mkdir(parents=True, exist_ok=True)
