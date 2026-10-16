@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { AuditStudio } from './components/AuditStudio';
 import { CalculatorsHub } from './components/CalculatorsHub';
 import { DiagnosticsHub } from './components/DiagnosticsHub';
+import { AboutUsHub } from './components/AboutUsHub';
 import { AuthModal } from './components/AuthModal';
 import { AIAuditAgent } from './components/AIAuditAgent';
 import { fetchHealth, fetchScenarios } from './services/api';
@@ -83,6 +84,8 @@ export function App() {
           setSearchQuery={setSearchQuery}
           onSearchSubmit={handleGlobalSearch}
           onGoHome={handleGoHome}
+          onOpenAbout={() => setActiveTab('about')}
+          activeTab={activeTab}
           currentUser={currentUser}
           onOpenAuth={(mode) => {
             setAuthInitialMode(mode);
@@ -107,6 +110,12 @@ export function App() {
               )}
               {activeTab === 'calculators' && <CalculatorsHub />}
               {activeTab === 'diagnostics' && <DiagnosticsHub health={health} />}
+              {activeTab === 'about' && (
+                <AboutUsHub
+                  onNavigateTab={setActiveTab}
+                  onOpenChatbot={() => setIsChatbotOpen(true)}
+                />
+              )}
             </>
           )}
         </main>
@@ -122,6 +131,12 @@ export function App() {
             </div>
 
             <div className="flex items-center gap-4 text-[11px]">
+              <button
+                onClick={() => setActiveTab('about')}
+                className="text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
+              >
+                About Solution
+              </button>
               <span className="font-mono text-slate-400">Notice 2011/23 (DBR)</span>
               <span className="font-mono text-slate-400">Notice 3877/2019 (1% Cap)</span>
               <span className="font-mono text-slate-400">Circular 31/2013 (Mortgage)</span>

@@ -7,7 +7,8 @@ import {
   ExternalLink,
   ShieldCheck,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Info
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -50,6 +51,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Diagnostics & Telemetry',
       description: 'System health, Chroma & benchmark suite',
       icon: Activity
+    },
+    {
+      id: 'about',
+      label: 'About Solution',
+      description: 'What we do, what we offer & use cases',
+      icon: Info
     },
   ];
 

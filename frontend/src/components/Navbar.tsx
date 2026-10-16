@@ -7,7 +7,8 @@ import {
   UserPlus,
   LogOut,
   ShieldCheck,
-  Home
+  Home,
+  Info
 } from 'lucide-react';
 
 interface UserProfile {
@@ -22,6 +23,8 @@ interface NavbarProps {
   setSearchQuery: (q: string) => void;
   onSearchSubmit: (q: string) => void;
   onGoHome: () => void;
+  onOpenAbout?: () => void;
+  activeTab?: string;
   currentUser: UserProfile | null;
   onOpenAuth: (mode: 'signin' | 'signup') => void;
   onLogout: () => void;
@@ -32,6 +35,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   setSearchQuery,
   onSearchSubmit,
   onGoHome,
+  onOpenAbout,
+  activeTab,
   currentUser,
   onOpenAuth,
   onLogout
@@ -116,6 +121,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Dedicated About Us Button beside Search Bar */}
+        <button
+          onClick={onOpenAbout}
+          title="About ReguGraph Solution & Capabilities"
+          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl border text-xs font-semibold transition-all cursor-pointer shadow-sm shrink-0 ${
+            activeTab === 'about'
+              ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-cyan-500/20 font-bold'
+              : 'bg-[#131b2e] hover:bg-slate-800 border-slate-800 text-slate-200 hover:text-white hover:border-slate-700'
+          }`}
+        >
+          <Info className={`h-4 w-4 ${activeTab === 'about' ? 'text-slate-950' : 'text-cyan-400'}`} />
+          <span className="hidden sm:inline">About Us</span>
+        </button>
 
       </div>
 
