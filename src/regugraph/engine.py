@@ -134,7 +134,36 @@ def answer_regulatory_inquiry(query: str) -> Dict[str, Any]:
     top_citation = results[0]["circular_ref"] if results else "CBUAE Banking Regulatory Gazette"
     context_text = "\n\n".join([f"[{r['circular_ref']} - {r['article_header']}]:\n{r['content']}" for r in results])
 
-    # 4. Synthesize Answer using Local LLM or Deterministic Legal Fallback
+    def clean_regulatory_text(content: str) -> str:
+        """Format raw regulatory chunk into clean, readable executive text."""
+        # Strip bracketed source headers e.g. [Notice No. 2011/23 - Article 7: ...]
+        text = re.sub(r'^\s*\[[^\]]+\]\s*\n*', '', content.strip())
+        # Strip duplicate top markdown headers e.g. ### Article 7: Debt Burden Ratio (DBR) Statutory Cap
+        text = re.sub(r'^\s*###\s+[^\n]+\n+', '', text)
+        # Normalize unicode dashes and smart quotes to safe standard characters
+        text = text.replace('\u2014', ' - ').replace('\u2013', ' - ').replace('\u2018', "'").replace('\u2019', "'").replace('\u201c', '"').replace('\u201d', '"')
+        # Simplify LaTeX DBR math formula into clean readable math
+        text = re.sub(
+            r'\$\$.*?DBR.*?\\le\s*50\.0\\%.*?\$\$',
+            '`DBR = (Total Monthly Loan Installments + 5% of Credit Card Limits) / Gross Monthly Salary <= 50.0%`',
+            text,
+            flags=re.DOTALL
+        )
+        # Strip any remaining LaTeX wrappers
+        text = re.sub(r'\$\$([^\$]+)\$\$', r'`\1`', text)
+        text = re.sub(r'\\text\{([^}]+)\}', r'\1', text)
+        text = re.sub(r'\\sum', 'Total', text)
+        text = re.sub(r'\\times', '*', text)
+        text = re.sub(r'\\le', '<=', text)
+        text = re.sub(r'\\ge', '>=', text)
+        text = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1) / (\2)', text)
+        # Strip excessive horizontal rule breaks
+        text = re.sub(r'\n---+\s*', '\n', text)
+        # Clean up double headers or whitespace
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        return text.strip()
+
+    # 4. Synthesize Answer using Local LLM or Deterministic Legal Synthesis
     llm = RegulatoryLLM()
     answer = ""
     if llm.is_available:
@@ -149,9 +178,19 @@ def answer_regulatory_inquiry(query: str) -> Dict[str, Any]:
         )
         answer = llm.invoke(prompt).strip()
 
-    # If LLM offline or returned empty, use deterministic legal synthesis
+    # If LLM offline or returned empty, generate a clean, executive regulatory synthesis
     if not answer:
-        answer = f"According to {top_citation}, the governing Central Bank of the UAE regulation provides:\n" + results[0]["content"]
+        primary_chunk = results[0] if results else None
+        if primary_chunk:
+            cleaned_content = clean_regulatory_text(primary_chunk["content"])
+            article_title = primary_chunk.get("article_header", "Statutory Rule")
+            answer = (
+                f"Under **{top_citation}** ({article_title}), the Central Bank of the UAE mandates the following statutory requirements:\n\n"
+                f"{cleaned_content}\n\n"
+                f"**Statutory Compliance Note:** Financial institutions operating in the UAE are legally bound by these limits. Any contractual clause in breach of these thresholds is deemed null, void, and unenforceable under UAE Federal Law."
+            )
+        else:
+            answer = f"No governing CBUAE regulatory provisions were found matching the inquiry: '{query}'."
 
     latency = (time.perf_counter() - start_t) * 1000.0
     return {

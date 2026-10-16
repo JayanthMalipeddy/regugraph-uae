@@ -13,12 +13,14 @@ import {
 } from 'lucide-react';
 import type { ContractScenario, AuditResponse } from '../types';
 import { auditContract, exportAuditReport } from '../services/api';
+import { HeroCarousel } from './HeroCarousel';
 
 interface AuditStudioProps {
   scenarios: ContractScenario[];
+  onNavigateTab?: (tab: string) => void;
 }
 
-export const AuditStudio: React.FC<AuditStudioProps> = ({ scenarios }) => {
+export const AuditStudio: React.FC<AuditStudioProps> = ({ scenarios, onNavigateTab }) => {
   const [viewMode, setViewMode] = useState<'blocks' | 'list' | 'table'>('blocks');
   const [listCategory, setListCategory] = useState<'all' | 'personal' | 'mortgage' | 'auto'>('all');
   const [tableFilter, setTableFilter] = useState<string>('');
@@ -273,39 +275,15 @@ Governing Law: Central Bank of the United Arab Emirates.`;
         </div>
       </div>
 
-      {/* Preset Loan Scenarios Pills (Quick Pick) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-          Loan Case Studies:
-        </span>
-        {scenarios.map((sc) => {
-          const isSelected = selectedScenarioId === sc.id;
-          const isOvercharge = sc.expected_restitution_aed > 0;
-          return (
-            <button
-              key={sc.id}
-              onClick={() => handleSelectPreset(sc)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-2xl text-xs font-medium whitespace-nowrap transition-all border cursor-pointer ${
-                isSelected
-                  ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/50 shadow-md shadow-cyan-950/30'
-                  : 'bg-[#131b2e]/60 text-slate-400 border-slate-800/80 hover:bg-[#131b2e] hover:text-slate-200'
-              }`}
-            >
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  isOvercharge ? 'bg-rose-400' : sc.severity.includes('COMPLIANT') ? 'bg-emerald-400' : 'bg-amber-400'
-                }`}
-              />
-              <span>{sc.title}</span>
-              {sc.expected_restitution_aed > 0 && (
-                <span className="text-[10px] font-mono text-amber-400 font-bold">
-                  +AED {sc.expected_restitution_aed.toLocaleString()}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* Hero Interactive Feature Walkthrough Slideshow (Tells visitors what they can do) */}
+      <HeroCarousel
+        onAuditFacility={() => setShowInputModal(true)}
+        onOpenCalculators={() => onNavigateTab ? onNavigateTab('calculators') : undefined}
+        onSelectCaseStudy={(scId) => {
+          const sc = scenarios.find((s) => s.id === scId);
+          if (sc) handleSelectPreset(sc);
+        }}
+      />
 
       {/* ============================================================== */}
       {/* 1. BLOCKS VIEW (Default Visual FinTech Dashboard)              */}
@@ -649,6 +627,80 @@ Governing Law: Central Bank of the United Arab Emirates.`;
           </button>
         </div>
 
+      </div>
+
+      {/* ============================================================== */}
+      {/* BENCHMARK LOAN CASE STUDIES & STRESS TESTS DOCK                */}
+      {/* ============================================================== */}
+      <div className="space-y-4 pt-4 border-t border-slate-800/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                CBUAE Stress-Test Benchmarks
+              </span>
+              <span className="text-xs text-slate-400 font-medium">Real-World Facility Case Studies</span>
+            </div>
+            <h2 className="text-lg font-bold text-white mt-1">
+              Select an Institutional Loan Case Study to Audit
+            </h2>
+          </div>
+          <span className="text-xs text-slate-400">
+            Click any scenario to populate contract text & run autonomous compliance audit
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {scenarios.map((sc) => {
+            const isSelected = selectedScenarioId === sc.id;
+            const isOvercharge = sc.expected_restitution_aed > 0;
+            return (
+              <div
+                key={sc.id}
+                onClick={() => handleSelectPreset(sc)}
+                className={`p-4 rounded-3xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  isSelected
+                    ? 'bg-cyan-950/20 border-cyan-500/70 shadow-lg shadow-cyan-950/50 ring-1 ring-cyan-500/40'
+                    : 'bg-[#0f172a]/70 border-slate-800/90 hover:border-slate-700 hover:bg-[#0f172a]'
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#0a0f1d] border border-slate-800 text-slate-300">
+                      {sc.loan_type}
+                    </span>
+                    <span
+                      className={`h-2.5 w-2.5 rounded-full ${
+                        isOvercharge ? 'bg-rose-400' : sc.severity.includes('COMPLIANT') ? 'bg-emerald-400' : 'bg-amber-400'
+                      }`}
+                    />
+                  </div>
+
+                  <h3 className="text-xs font-bold text-white line-clamp-1">{sc.title}</h3>
+                  <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">{sc.summary}</p>
+                </div>
+
+                <div className="pt-3 mt-3 border-t border-slate-800/70 flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold text-amber-400">
+                    {sc.expected_restitution_aed > 0
+                      ? `+AED ${sc.expected_restitution_aed.toLocaleString()} Refund`
+                      : 'Compliant (AED 0)'}
+                  </span>
+                  <button
+                    type="button"
+                    className={`text-xs font-bold px-2.5 py-1 rounded-xl transition-all ${
+                      isSelected
+                        ? 'bg-cyan-500 text-slate-950 shadow-md'
+                        : 'bg-[#131b2e] text-slate-300 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    {isSelected ? 'Audited ✓' : 'Audit →'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* ============================================================== */}

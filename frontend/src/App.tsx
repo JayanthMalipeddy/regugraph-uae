@@ -103,7 +103,7 @@ export function App() {
           ) : (
             <>
               {(activeTab === 'dashboard' || activeTab === 'codex') && (
-                <AuditStudio scenarios={scenarios} />
+                <AuditStudio scenarios={scenarios} onNavigateTab={setActiveTab} />
               )}
               {activeTab === 'calculators' && <CalculatorsHub />}
               {activeTab === 'diagnostics' && <DiagnosticsHub health={health} />}

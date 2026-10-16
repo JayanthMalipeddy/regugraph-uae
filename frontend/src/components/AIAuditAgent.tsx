@@ -187,6 +187,91 @@ export const AIAuditAgent: React.FC<AIAuditAgentProps> = ({
     { label: 'Sanadak Dispute Filing', q: 'How does a borrower file a complaint with Sanadak for unlawful bank fees?' }
   ];
 
+  const renderFormattedContent = (text: string, isUser: boolean) => {
+    if (isUser) {
+      return <div className="whitespace-pre-wrap font-sans text-white text-xs leading-relaxed">{text}</div>;
+    }
+
+    const paragraphs = text.split('\n\n');
+
+    return (
+      <div className="space-y-2.5 text-xs text-slate-100 font-sans leading-relaxed">
+        {paragraphs.map((p, idx) => {
+          const trimmed = p.trim();
+          if (!trimmed) return null;
+
+          // Formula block check
+          if (trimmed.startsWith('`DBR') || (trimmed.startsWith('`') && trimmed.endsWith('`'))) {
+            return (
+              <div
+                key={idx}
+                className="p-2.5 rounded-xl bg-[#0a0f1d] border border-cyan-500/30 font-mono text-[11px] text-cyan-300 overflow-x-auto shadow-inner"
+              >
+                <div className="text-[9px] uppercase tracking-wider text-slate-500 font-sans font-bold mb-1">
+                  Statutory Regulatory Formula
+                </div>
+                <div>{trimmed.replace(/^`|`$/g, '')}</div>
+              </div>
+            );
+          }
+
+          // Section header check e.g. #### Section 7.1: The 50% Rule
+          if (trimmed.startsWith('####') || trimmed.startsWith('###')) {
+            const headerText = trimmed.replace(/^#+\s*/, '');
+            return (
+              <div key={idx} className="font-bold text-white text-xs flex items-center gap-1.5 pt-1 text-cyan-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+                <span>{headerText}</span>
+              </div>
+            );
+          }
+
+          // Statutory note check
+          if (trimmed.startsWith('**Statutory Compliance Note:**')) {
+            return (
+              <div
+                key={idx}
+                className="p-2.5 rounded-xl bg-cyan-950/20 border border-cyan-800/40 text-[11px] text-cyan-300 leading-normal"
+              >
+                <strong className="text-white block mb-0.5">Statutory Compliance Note:</strong>
+                <span className="text-slate-300">
+                  {trimmed.replace('**Statutory Compliance Note:**', '').trim()}
+                </span>
+              </div>
+            );
+          }
+
+          // Standard paragraph with bold and code formatting
+          const parts = trimmed.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+          return (
+            <p key={idx} className="leading-relaxed">
+              {parts.map((part, partIdx) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                  return (
+                    <strong key={partIdx} className="font-bold text-white">
+                      {part.slice(2, -2)}
+                    </strong>
+                  );
+                }
+                if (part.startsWith('`') && part.endsWith('`')) {
+                  return (
+                    <code
+                      key={partIdx}
+                      className="px-1.5 py-0.5 rounded-md bg-[#0a0f1d] border border-slate-800 text-cyan-300 font-mono text-[11px]"
+                    >
+                      {part.slice(1, -1)}
+                    </code>
+                  );
+                }
+                return part;
+              })}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <>
       {/* ============================================================ */}
@@ -324,9 +409,7 @@ export const AIAuditAgent: React.FC<AIAuditAgentProps> = ({
                     )}
 
                     {/* Message Body */}
-                    <div className="whitespace-pre-wrap font-sans text-slate-100 leading-relaxed text-xs">
-                      {msg.text}
-                    </div>
+                    {renderFormattedContent(msg.text, isUser)}
 
                     {/* Refusal Notice */}
                     {!isUser && msg.refusal_triggered && (
