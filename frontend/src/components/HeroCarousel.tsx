@@ -295,9 +295,6 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
               title={`Go to slide ${idx + 1}`}
             />
           ))}
-          <span className="text-[10px] text-slate-500 font-mono ml-2">
-            Auto-advancing (hover to pause)
-          </span>
         </div>
 
         {/* Next / Previous & Dismiss Controls */}

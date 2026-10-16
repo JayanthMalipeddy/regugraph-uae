@@ -9,10 +9,12 @@ import {
   Sliders,
   Sparkles,
   ArrowUpRight,
-  Search
+  Search,
+  FileText
 } from 'lucide-react';
 import type { ContractScenario, AuditResponse } from '../types';
 import { auditContract, exportAuditReport } from '../services/api';
+import { downloadWordDossier, downloadPdfDossier } from '../utils/reportExport';
 import { HeroCarousel } from './HeroCarousel';
 
 interface AuditStudioProps {
@@ -30,6 +32,8 @@ export const AuditStudio: React.FC<AuditStudioProps> = ({ scenarios, onNavigateT
   const [auditResult, setAuditResult] = useState<AuditResponse | null>(null);
   const [showInputModal, setShowInputModal] = useState<boolean>(false);
   const [inputMode, setInputMode] = useState<'simple' | 'document'>('simple');
+  const [showDownloadMenu, setShowDownloadMenu] = useState<boolean>(false);
+  const [activeBannerMessage, setActiveBannerMessage] = useState<string | null>(null);
 
   // Borrower simple inputs (Human friendly, no technical jargon!)
   const [bankName, setBankName] = useState<string>('Apex Gulf Finance');
@@ -51,10 +55,24 @@ export const AuditStudio: React.FC<AuditStudioProps> = ({ scenarios, onNavigateT
     }
   }, [scenarios]);
 
-  const handleSelectPreset = (sc: ContractScenario) => {
+  const handleSelectPreset = (sc: ContractScenario, shouldScroll: boolean = false) => {
+    setViewMode('blocks');
     setSelectedScenarioId(sc.id);
     setContractText(sc.contract_text);
     handleAudit(sc.contract_text, sc.title);
+
+    // Provide explicit confirmation banner
+    setActiveBannerMessage(`Loaded & Audited: ${sc.title} — Restitution: AED ${sc.expected_restitution_aed.toLocaleString()} (${sc.severity})`);
+    setTimeout(() => setActiveBannerMessage(null), 5000);
+
+    if (shouldScroll) {
+      setTimeout(() => {
+        const el = document.getElementById('benchmarks-dock');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
   };
 
   const handleAudit = async (textToAudit: string, titleToAudit?: string) => {
@@ -87,21 +105,29 @@ Governing Law: Central Bank of the United Arab Emirates.`;
     handleAudit(text, `${bankName} ${loanType}`);
   };
 
-  const handleDownloadReport = async () => {
+  const handleExportWord = async () => {
+    setShowDownloadMenu(false);
     try {
       const { report_markdown, title } = await exportAuditReport(
         contractText,
         auditResult?.contract_title || 'Credit Facility Audit'
       );
-      const blob = new Blob([report_markdown], { type: 'text/markdown;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${title.replace(/\s+/g, '_')}_Compliance_Report.md`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      alert('Error downloading report: ' + err);
+      downloadWordDossier(title, report_markdown, auditResult);
+    } catch (err: any) {
+      alert('Error generating Word report: ' + (err.message || err));
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setShowDownloadMenu(false);
+    try {
+      const { report_markdown, title } = await exportAuditReport(
+        contractText,
+        auditResult?.contract_title || 'Credit Facility Audit'
+      );
+      downloadPdfDossier(title, report_markdown, auditResult);
+    } catch (err: any) {
+      alert('Error generating PDF report: ' + (err.message || err));
     }
   };
 
@@ -257,7 +283,7 @@ Governing Law: Central Bank of the United Arab Emirates.`;
         </div>
 
         {/* Action Buttons (matching fintechui.jpeg) */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative">
           <button
             onClick={() => setShowInputModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs shadow-lg transition-all cursor-pointer"
@@ -265,15 +291,65 @@ Governing Law: Central Bank of the United Arab Emirates.`;
             <Sliders className="h-3.5 w-3.5" />
             <span>Audit Loan Facility</span>
           </button>
-          <button
-            onClick={handleDownloadReport}
-            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#131b2e] hover:bg-slate-800 border border-slate-800 text-white font-semibold text-xs transition-all cursor-pointer"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span>Download report</span>
-          </button>
+          
+          <div className="relative">
+            <button
+              onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#131b2e] hover:bg-slate-800 border border-slate-800 text-white font-semibold text-xs transition-all cursor-pointer shadow-sm"
+              title="Download Compliance Dossier as Word or PDF"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Download report</span>
+              <span className="text-[10px] text-slate-400">▾</span>
+            </button>
+
+            {/* Dropdown Menu for Word vs PDF format */}
+            {showDownloadMenu && (
+              <div className="absolute right-0 top-full mt-2 w-60 rounded-2xl bg-[#0f172a] border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1.5 border-b border-slate-800/80 mb-1">
+                  Select Report Format
+                </div>
+                <button
+                  onClick={handleExportWord}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-800/80 text-left text-xs text-slate-200 hover:text-white transition-colors cursor-pointer group"
+                >
+                  <FileText className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <div>
+                    <div className="font-bold text-white">Microsoft Word (.doc)</div>
+                    <div className="text-[10px] text-slate-400">Editable Word document</div>
+                  </div>
+                </button>
+                <button
+                  onClick={handleExportPdf}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-800/80 text-left text-xs text-slate-200 hover:text-white transition-colors cursor-pointer group mt-0.5"
+                >
+                  <Download className="h-4 w-4 text-rose-400 group-hover:scale-110 transition-transform" />
+                  <div>
+                    <div className="font-bold text-white">Adobe PDF (.pdf)</div>
+                    <div className="text-[10px] text-slate-400">Printable executive dossier</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Active Action Confirmation Banner */}
+      {activeBannerMessage && (
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-cyan-950/40 border border-cyan-500/40 text-cyan-200 text-xs shadow-lg animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+            <span className="font-semibold">{activeBannerMessage}</span>
+          </div>
+          <button
+            onClick={() => setActiveBannerMessage(null)}
+            className="text-slate-400 hover:text-white text-xs px-2 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Hero Interactive Feature Walkthrough Slideshow (Tells visitors what they can do) */}
       <HeroCarousel
@@ -281,7 +357,7 @@ Governing Law: Central Bank of the United Arab Emirates.`;
         onOpenCalculators={() => onNavigateTab ? onNavigateTab('calculators') : undefined}
         onSelectCaseStudy={(scId) => {
           const sc = scenarios.find((s) => s.id === scId);
-          if (sc) handleSelectPreset(sc);
+          if (sc) handleSelectPreset(sc, true);
         }}
       />
 
@@ -632,7 +708,7 @@ Governing Law: Central Bank of the United Arab Emirates.`;
       {/* ============================================================== */}
       {/* BENCHMARK LOAN CASE STUDIES & STRESS TESTS DOCK                */}
       {/* ============================================================== */}
-      <div className="space-y-4 pt-4 border-t border-slate-800/80">
+      <div id="benchmarks-dock" className="space-y-4 pt-4 border-t border-slate-800/80">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">

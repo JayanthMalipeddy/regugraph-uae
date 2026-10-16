@@ -24,7 +24,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onLoginSuccess({
-      name: mode === 'signin' ? 'Khalid Al-Qasimi' : 'New Enterprise Borrower',
+      name: mode === 'signin' ? 'Jayanth Malipeddy' : 'New Enterprise Borrower',
       email: email,
       organization: orgName,
       role: 'Corporate Borrower & Treasury Director'
@@ -34,7 +34,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleDemoLogin = () => {
     onLoginSuccess({
-      name: 'Khalid Al-Qasimi',
+      name: 'Jayanth Malipeddy',
       email: 'treasury@almansouri-group.ae',
       organization: 'Al Mansouri Investment Group LLC',
       role: 'Treasury & Risk Director'

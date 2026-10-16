@@ -3,8 +3,7 @@ import {
   Percent,
   Building,
   TrendingDown,
-  ShieldCheck,
-  Scale
+  ShieldCheck
 } from 'lucide-react';
 import { calculateDBR, calculateEarlySettlement, calculateMortgageLTV } from '../services/api';
 import type { DBRCalculationResponse, EarlySettlementResponse, MortgageLTVResponse } from '../types';
@@ -87,10 +86,6 @@ export const CalculatorsHub: React.FC = () => {
       {/* Header Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#101728] via-[#0d1424] to-[#0a0f1d] p-6 sm:p-8 border border-slate-800/90 shadow-xl">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-3">
-            <Scale className="h-3.5 w-3.5" />
-            Deterministic Financial Mathematics
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Statutory Financial Compliance Calculators
           </h1>
