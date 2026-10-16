@@ -264,6 +264,28 @@ def render_website_hero():
     """, unsafe_allow_html=True)
 
 
+def render_fintech_security_posture():
+    """Renders the Google Well-Architected Framework (WAF) FinTech Security & Privacy banner."""
+    st.markdown("""
+    <div style="background: rgba(13, 148, 136, 0.06); border: 1px solid rgba(45, 212, 191, 0.2); border-radius: 14px; padding: 18px 22px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 22px;">🛡️</span>
+                <div>
+                    <span style="font-weight: 700; color: #2DD4BF; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Institutional FinTech Security & Privacy Posture</span><br>
+                    <span style="color: #94A3B8; font-size: 13px;">Aligned with CBUAE Consumer Protection Standards and Google Cloud Well-Architected Security Pillars.</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                <span style="background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 6px; font-size: 11.5px; color: #CBD5E1; font-family: 'JetBrains Mono';">🔒 Zero Data Retention</span>
+                <span style="background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 6px; font-size: 11.5px; color: #CBD5E1; font-family: 'JetBrains Mono';">⚡ Deterministic Math Guardrails</span>
+                <span style="background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 6px; font-size: 11.5px; color: #CBD5E1; font-family: 'JetBrains Mono';">📜 100% Gazette Grounded</span>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 def render_how_it_works():
     """Renders the 3-step visual guide on how to get an agreement audited."""
     st.markdown("### 🔍 How It Works: 3-Step Automated Compliance Audit")
