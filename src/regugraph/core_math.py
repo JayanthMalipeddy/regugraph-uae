@@ -42,7 +42,8 @@ def calculate_dbr(
     monthly_loan_installments: float,
     gross_monthly_salary: float,
     credit_card_limits: float = 0.0,
-    other_debt_obligations: float = 0.0
+    other_debt_obligations: float = 0.0,
+    max_dbr_cap: float = MAX_DBR_PERCENT
 ) -> DBRResult:
     """Calculate Debt Burden Ratio (DBR) under CBUAE Notice 2011/23.
     Formula: (Monthly EMIs + 5% of Credit Card Limits + Other Obligations) / Gross Salary * 100
@@ -54,10 +55,10 @@ def calculate_dbr(
     total_monthly = monthly_loan_installments + card_commitment + other_debt_obligations
     dbr_pct = round((total_monthly / gross_monthly_salary) * 100, 2)
     
-    max_allowable_commitment = gross_monthly_salary * (MAX_DBR_PERCENT / 100)
+    max_allowable_commitment = gross_monthly_salary * (max_dbr_cap / 100)
     headroom = round(max_allowable_commitment - total_monthly, 2)
-    is_compliant = dbr_pct <= MAX_DBR_PERCENT
-    violation_margin = round(dbr_pct - MAX_DBR_PERCENT, 2) if not is_compliant else 0.0
+    is_compliant = dbr_pct <= max_dbr_cap
+    violation_margin = round(dbr_pct - max_dbr_cap, 2) if not is_compliant else 0.0
 
     return DBRResult(
         dbr_percent=dbr_pct,
