@@ -191,7 +191,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
     if (isPaused || isDismissed) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 6000);
+    }, 3000);
     return () => clearInterval(interval);
   }, [isPaused, isDismissed, slides.length]);
 
