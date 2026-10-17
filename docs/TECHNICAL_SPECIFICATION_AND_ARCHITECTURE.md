@@ -1,6 +1,7 @@
 # ReguGraph-UAE: Technical Specification & Engineering Blueprint
 **Deep Technical Architecture, LangGraph State Machine, Multi-Engine RAG, Deterministic Math Formalisms & API Contracts**
 
+*Author / Lead Engineer:* Jayanth Malipeddy  
 *Document Reference:* `REG-TECH-2026-V1.0`  
 *Target Demonstration Date:* October 19, 2026  
 *Primary Technologies:* React 19 | Vite 8 | FastAPI 0.141 | LangGraph 1.2.12 | ChromaDB 0.6.3 | Python 3.13  

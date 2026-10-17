@@ -1,11 +1,14 @@
 # ReguGraph-UAE: Complete Project Specification & Functional Explanation
 **Autonomous Central Bank of the UAE (CBUAE) Regulatory Intelligence, Multi-Agent Credit Audit & Deterministic Math Platform**
 
+*Author / Principal Architect:* Jayanth Malipeddy  
 *Document Reference:* `REG-SPEC-2026-V1.0`  
 *Publication Date:* October 17, 2026  
 *Target Demonstration Date:* October 19, 2026  
 *Governing Jurisdiction:* United Arab Emirates (CBUAE Consumer Protection & Banking Supervision)  
 *Architectural Topology:* Port 5173 (Main Client Platform) | Port 5174 (Diagnostics Hub) | Port 8000 (FastAPI Gateway) | Port 8081 (ChromaDB Server) | Port 8090 (Chroma Web UI)  
+
+> **Project Primer:** ReguGraph-UAE helps retail bank borrowers, compliance risk officers, and regulatory auditors answer Central Bank of the UAE (CBUAE) credit-compliance and contract-legality questions from authoritative CBUAE regulatory circulars and fee schedules in a modern React/Vite fintech dashboard with 100.0% statutory faithfulness and zero mathematical hallucination.
 
 ---
 

@@ -11,6 +11,7 @@ def build_technical_specification_doc():
 
     metadata = {
         "Document Reference:": "REG-TECH-2026-V1.0",
+        "Author / Lead Engineer:": "Jayanth Malipeddy",
         "System Name:": "ReguGraph-UAE Engine & Multi-Agent Architecture",
         "Technical Stack:": "React 19 | Vite 8 | FastAPI 0.141 | LangGraph 1.2 | ChromaDB 0.6 | Python 3.13",
         "Target Demonstration:": "October 19, 2026",

@@ -14,7 +14,7 @@ def build_project_specification_doc():
         "Document Reference:": "REG-SPEC-2026-V1.0",
         "Project Name:": "ReguGraph-UAE (Autonomous Central Bank Compliance Platform)",
         "Governing Jurisdiction:": "United Arab Emirates — Central Bank of the UAE (CBUAE)",
-        "Lead System Architect:": "AI Engineering & RegTech Practice",
+        "Lead System Architect & Author:": "Jayanth Malipeddy",
         "Target Demonstration Date:": "October 19, 2026",
         "Target Ports Topology:": "Port 5173 (Main Demo) | Port 5174 (Diagnostics) | Port 8000 (API) | Port 8081 (Chroma) | Port 8090 (UI)",
         "Classification:": "Commercial Confidential / Official Demonstration Specification"

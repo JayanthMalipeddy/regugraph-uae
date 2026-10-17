@@ -1,6 +1,7 @@
 # ReguGraph-UAE: Official Video Demonstration & Walkthrough Script
 **Autonomous Central Bank of the UAE (CBUAE) Credit Compliance, Multi-Agent Audit & Deterministic Math Platform**
 
+*Presenter / Author:* Jayanth Malipeddy  
 *Target Demonstration Date:* October 19, 2026  
 *Target Duration:* 4 minutes 15 seconds (Range: 3 to 5 minutes)  
 *Format:* High-Definition Screen Recording (1080p / 4K, 60fps) with Live Narration / Voiceover  
