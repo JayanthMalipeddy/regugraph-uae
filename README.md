@@ -184,5 +184,5 @@ C:\Projects\regugraph-uae/
 
 - **Project:** ReguGraph-UAE
 - **Track:** Mastering Agentic AI — Week 2: "Build Your RAG Application"
-- **Author:** Pair programmed with Google Deepmind's Antigravity AI Assistant
+- **Author:** Jayanth Malipeddy
 - **Evaluation Status:** 13/13 Pytest Passing (100%), 15/15 Benchmark Queries Passing (100% Faithfulness)
