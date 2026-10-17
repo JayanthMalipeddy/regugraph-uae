@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:diagnostics": "vite --config vite.config.diagnostics.ts --port 5174 --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "chub": "node ../tools/context-hub/cli/bin/chub"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

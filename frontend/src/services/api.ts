@@ -105,11 +105,11 @@ export async function calculateMortgageLTV(params: {
   return res.json();
 }
 
-export async function searchCodex(query: string): Promise<SearchResponse> {
+export async function searchCodex(query: string, mode: string = 'agentic'): Promise<SearchResponse> {
   const res = await fetch(`${API_BASE}/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query })
+    body: JSON.stringify({ query, mode })
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
@@ -117,6 +117,26 @@ export async function searchCodex(query: string): Promise<SearchResponse> {
   }
   return res.json();
 }
+
+export async function sendChatMessage(message: string, mode: string = 'agentic'): Promise<SearchResponse> {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, mode })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Chat query failed');
+  }
+  return res.json();
+}
+
+export async function fetchRAGModes(): Promise<{ modes: import('../types').RAGMode[] }> {
+  const res = await fetch(`${API_BASE}/rag/modes`);
+  if (!res.ok) throw new Error('Failed to fetch RAG modes');
+  return res.json();
+}
+
 
 export async function fetchRegulations(): Promise<{ total_articles: number; documents: RegulationDocument[] }> {
   const res = await fetch(`${API_BASE}/regulations`);
@@ -150,3 +170,32 @@ export async function runLiveEvaluation(): Promise<any> {
   if (!res.ok) throw new Error('Failed to execute live RAG evaluation suite');
   return res.json();
 }
+
+export interface ServicePing {
+  status: 'online' | 'offline' | 'degraded';
+  service_name: string;
+  latency_ms: number;
+  last_checked: string;
+  details?: Record<string, any>;
+  endpoint?: string;
+  port?: number;
+  architecture?: string;
+}
+
+export interface DiagnosticsPingResponse {
+  timestamp: string;
+  default_refresh_seconds: number;
+  refresh_interval_human: string;
+  services: {
+    chroma_db: ServicePing;
+    chroma_ui: ServicePing;
+    langgraph: ServicePing;
+  };
+}
+
+export async function fetchDiagnosticsPing(): Promise<DiagnosticsPingResponse> {
+  const res = await fetch(`${API_BASE}/diagnostics/ping`);
+  if (!res.ok) throw new Error('Failed to ping diagnostics infrastructure');
+  return res.json();
+}
+

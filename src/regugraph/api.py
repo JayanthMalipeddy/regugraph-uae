@@ -91,7 +91,15 @@ class MortgageLTVRequest(BaseModel):
 
 
 class SearchRequest(BaseModel):
-    query: str = Field(..., min_length=2, description="Natural language regulatory inquiry or compliance question")
+    query: str = Field(..., min_length=1, description="Natural language regulatory inquiry or compliance question")
+    mode: Optional[str] = Field("agentic", description="RAG architecture mode")
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, description="User message to the AI compliance agent")
+    mode: Optional[str] = Field("agentic", description="RAG mode to execute")
+    conversation_history: Optional[List[Dict[str, str]]] = Field(default=[], description="Prior chat turns")
+
 
 
 # ============================================================================
@@ -130,6 +138,117 @@ def get_health():
             "personal_tenure_cap": f"{MAX_PERSONAL_LOAN_TENURE} months",
             "auto_tenure_cap": f"{MAX_AUTO_LOAN_TENURE} months",
             "mortgage_tenure_cap": f"{MAX_MORTGAGE_TENURE} months (25 years)"
+        }
+    }
+
+
+@app.get("/api/diagnostics/ping")
+def ping_diagnostics_services():
+    """Real-time ping diagnostic endpoint for ChromaDB, Chroma Web UI, and LangGraph Engine.
+    Reports live online/offline status, latency in milliseconds, and collection counts.
+    Default client refresh interval is 5 minutes (300 seconds).
+    """
+    import httpx
+    from datetime import datetime
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # 1. Ping ChromaDB REST Server (Port 8081)
+    chroma_res = {
+        "status": "offline",
+        "service_name": "ChromaDB REST Server",
+        "endpoint": f"http://{CHROMA_HOST}:{CHROMA_PORT}",
+        "port": CHROMA_PORT,
+        "latency_ms": 0.0,
+        "last_checked": now_str,
+        "details": {
+            "api_version": "v2",
+            "collections": ["cbuae_regulations", "cbuae_eval_runs"],
+            "chunks_count": 0,
+            "vector_space": "Cosine HNSW (384-dim)"
+        }
+    }
+    t0_chroma = time.perf_counter()
+    try:
+        with httpx.Client(timeout=1.5) as client:
+            resp = client.get(f"http://{CHROMA_HOST}:{CHROMA_PORT}/api/v2/heartbeat")
+            if resp.status_code == 200:
+                chroma_res["status"] = "online"
+                chroma_res["latency_ms"] = round((time.perf_counter() - t0_chroma) * 1000, 2)
+                try:
+                    retriever = get_retriever()
+                    if retriever and retriever.collection:
+                        chroma_res["details"]["chunks_count"] = retriever.collection.count()
+                except Exception:
+                    pass
+    except Exception as e:
+        chroma_res["status"] = "offline"
+        chroma_res["details"]["error"] = str(e)
+
+    # 2. Ping Chroma Web UI (Port 8090)
+    ui_res = {
+        "status": "offline",
+        "service_name": "Chroma Web UI",
+        "endpoint": "http://localhost:8090",
+        "port": 8090,
+        "latency_ms": 0.0,
+        "last_checked": now_str,
+        "details": {
+            "version": "1.0.0",
+            "ui_client": "ReguGraph Chroma Explorer",
+            "collections_monitored": 2
+        }
+    }
+    t0_ui = time.perf_counter()
+    try:
+        with httpx.Client(timeout=1.5) as client:
+            resp_ui = client.get("http://localhost:8090/health")
+            if resp_ui.status_code == 200:
+                ui_data = resp_ui.json()
+                ui_res["status"] = "online"
+                ui_res["latency_ms"] = round((time.perf_counter() - t0_ui) * 1000, 2)
+                ui_res["details"]["collections_monitored"] = ui_data.get("collections_count", 2)
+                ui_res["details"]["chroma_connected"] = ui_data.get("chroma_connected", True)
+    except Exception as e:
+        ui_res["status"] = "offline"
+        ui_res["details"]["error"] = str(e)
+
+    # 3. Ping LangGraph Engine
+    t0_lg = time.perf_counter()
+    try:
+        audit_early_settlement_fee(500000.0, 5000.0)
+        calculate_dbr(monthly_loan_installments=5000.0, gross_monthly_salary=30000.0)
+        lg_latency = round((time.perf_counter() - t0_lg) * 1000, 2)
+        lg_res = {
+            "status": "online",
+            "service_name": "LangGraph Engine",
+            "architecture": "StateGraph Deterministic Pipeline",
+            "latency_ms": max(lg_latency, 0.4),
+            "last_checked": now_str,
+            "details": {
+                "math_engine": "Deterministic IEEE-754",
+                "retrieval": "Dense + BM25 (RRF k=60)",
+                "refusal_gate": "Foreign / Ungrounded Scope Gate Active",
+                "statutory_rules": "6 Circulars / 10 RAG Modes Active"
+            }
+        }
+    except Exception as e:
+        lg_res = {
+            "status": "degraded",
+            "service_name": "LangGraph Engine",
+            "architecture": "StateGraph Deterministic Pipeline",
+            "latency_ms": round((time.perf_counter() - t0_lg) * 1000, 2),
+            "last_checked": now_str,
+            "details": {"error": str(e)}
+        }
+
+    return {
+        "timestamp": now_str,
+        "default_refresh_seconds": 300,
+        "refresh_interval_human": "5 minutes",
+        "services": {
+            "chroma_db": chroma_res,
+            "chroma_ui": ui_res,
+            "langgraph": lg_res
         }
     }
 
@@ -483,14 +602,34 @@ def compute_mortgage_ltv(req: MortgageLTVRequest):
     }
 
 
+@app.get("/api/rag/modes")
+def list_rag_modes():
+    """Return catalog of all 10 RAG architectures, concepts, and 100% free open-source local tech stacks."""
+    from regugraph.rag.unified_rag import RAG_MODES_REGISTRY
+    return {"modes": list(RAG_MODES_REGISTRY.values())}
+
+
+@app.post("/api/chat")
+def chat_with_agent(req: ChatRequest):
+    """Conversational AI Agent endpoint with natural greetings, strict allowed-scope guardrails, and 10 RAG architectures."""
+    if not req.message or not req.message.strip():
+        raise HTTPException(status_code=400, detail="Chat message cannot be empty.")
+
+    from regugraph.rag.unified_rag import execute_unified_rag
+    result = execute_unified_rag(req.message, mode=req.mode or "agentic")
+    return result
+
+
 @app.post("/api/search")
 def search_regulatory_codex(req: SearchRequest):
-    """Natural Language Hybrid Search against CBUAE Regulatory Corpus with Refusal Guardrails."""
+    """Natural Language Search against CBUAE Regulatory Corpus with Refusal Guardrails and 10 RAG modes."""
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Search query cannot be empty.")
 
-    result = answer_regulatory_inquiry(req.query)
+    from regugraph.rag.unified_rag import execute_unified_rag
+    result = execute_unified_rag(req.query, mode=req.mode or "agentic")
     return result
+
 
 
 @app.get("/api/regulations")

@@ -310,3 +310,241 @@ export function downloadPdfDossier(title: string, markdownText?: string, auditRe
     printWindow.print();
   }, 400);
 }
+
+export interface ChatTranscriptMessage {
+  id: string;
+  sender: 'user' | 'agent';
+  text: string;
+  timestamp: string;
+  citation?: string;
+  refusal_triggered?: boolean;
+  refusal_category?: string;
+  rag_mode?: string;
+  latency_ms?: number;
+  retrieved_chunks?: {
+    content: string;
+    circular_ref: string;
+    article_header: string;
+    rrf_score?: number;
+  }[];
+}
+
+/**
+ * Generate a styled, Word-compatible HTML consultation transcript.
+ */
+export function buildChatTranscriptWordHtml(messages: ChatTranscriptMessage[]): string {
+  const dateStr = new Date().toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+  const timeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' GST';
+
+  const userMessages = messages.filter(m => m.sender === 'user');
+  const agentMessages = messages.filter(m => m.sender === 'agent');
+
+  return `<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<title>CBUAE Compliance Agent Guidance Transcript</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+  body {
+    font-family: 'Calibri', 'Arial', 'Segoe UI', sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #1e293b;
+    margin: 0;
+    padding: 24px;
+    background-color: #ffffff;
+  }
+  .header-box {
+    border-bottom: 3px solid #0284c7;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  .agency-badge {
+    font-size: 9pt;
+    font-weight: bold;
+    color: #0284c7;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+  .doc-title {
+    font-size: 20pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+  }
+  .doc-subtitle {
+    font-size: 11pt;
+    color: #64748b;
+  }
+  .overview-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 24px 0;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+  }
+  .overview-table td {
+    padding: 10px 14px;
+    font-size: 10pt;
+    border: 1px solid #e2e8f0;
+  }
+  .turn-card {
+    margin-bottom: 18px;
+    border-radius: 8px;
+    padding: 14px 18px;
+    border: 1px solid #e2e8f0;
+  }
+  .turn-user {
+    background-color: #f0f9ff;
+    border-left: 5px solid #0284c7;
+  }
+  .turn-agent {
+    background-color: #f8fafc;
+    border-left: 5px solid #0d9488;
+  }
+  .turn-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+    font-weight: bold;
+    color: #475569;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .turn-text {
+    font-size: 10.5pt;
+    color: #1e293b;
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+  .citation-box {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #ecfeff;
+    border: 1px solid #a5f3fc;
+    border-radius: 6px;
+    font-size: 9.5pt;
+    color: #0e7490;
+    font-weight: 600;
+  }
+  .refusal-box {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-radius: 6px;
+    font-size: 9.5pt;
+    color: #be123c;
+    font-weight: 600;
+  }
+  .footer-note {
+    margin-top: 36px;
+    padding-top: 16px;
+    border-top: 2px solid #e2e8f0;
+    font-size: 9pt;
+    color: #64748b;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header-box">
+    <div class="agency-badge">Central Bank of the United Arab Emirates • Regulatory Intelligence</div>
+    <h1 class="doc-title">AI Compliance Agent Guidance Transcript</h1>
+    <div class="doc-subtitle">Official Record of Interactive Regulatory Inquiry, Deterministic Checks &amp; Statutory Guidance</div>
+  </div>
+
+  <!-- Consultation Metadata Table -->
+  <table class="overview-table">
+    <tr>
+      <td width="25%"><strong>Date &amp; Time:</strong></td>
+      <td width="25%">${dateStr}, ${timeStr}</td>
+      <td width="25%"><strong>Jurisdiction:</strong></td>
+      <td width="25%">United Arab Emirates (CBUAE)</td>
+    </tr>
+    <tr>
+      <td><strong>Total Inquiries:</strong></td>
+      <td>${userMessages.length} User Queries</td>
+      <td><strong>Agent Responses:</strong></td>
+      <td>${agentMessages.length} Grounded Answers</td>
+    </tr>
+    <tr>
+      <td><strong>Statutory Rules:</strong></td>
+      <td colspan="3">Notice 2011/23 • Notice 3877/2019 • Circular 8/2020 • Sanadak Ombudsman Standards</td>
+    </tr>
+  </table>
+
+  <h2>Consultation Dialogue History</h2>
+
+  <!-- Messages -->
+  ${messages.map((m, index) => {
+    const isUser = m.sender === 'user';
+    const roleTitle = isUser ? 'BORROWER / FINANCIAL AUDITOR' : 'CBUAE REGULATORY AI AGENT';
+    const modeBadge = m.rag_mode ? ` • Mode: ${m.rag_mode.toUpperCase()}` : '';
+    const latencyBadge = m.latency_ms ? ` • ⚡ ${m.latency_ms} ms` : '';
+
+    return `
+    <div class="turn-card ${isUser ? 'turn-user' : 'turn-agent'}">
+      <div class="turn-header">
+        <span>Turn #${index + 1} — ${roleTitle}${modeBadge}${latencyBadge}</span>
+        <span style="font-family: monospace;">${m.timestamp || ''}</span>
+      </div>
+      <div class="turn-text">${m.text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>')}</div>
+      ${m.citation ? `
+        <div class="citation-box">
+          <strong>Statutory Legal Authority:</strong> ${m.citation.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+        </div>
+      ` : ''}
+      ${m.refusal_triggered ? `
+        <div class="refusal-box">
+          <strong>Scope Guardrail:</strong> Refusal Triggered (${m.refusal_category || 'Out of Permitted Scope'})
+        </div>
+      ` : ''}
+    </div>
+    `;
+  }).join('')}
+
+  <!-- Footer -->
+  <div class="footer-note">
+    <div><strong>ReguGraph-UAE • Autonomous Banking Regulatory Intelligence Engine</strong></div>
+    <div>CBUAE Notice 2011/23 • Notice 3877/2019 • Circular 8/2020 • Circular 31/2013</div>
+    <div style="margin-top: 4px; font-size: 8pt; color: #94a3b8;">
+      This transcript was automatically generated by ReguGraph-UAE for compliance review and legal documentation.
+    </div>
+  </div>
+
+</body>
+</html>`;
+}
+
+/**
+ * Download Chat Transcript as Microsoft Word Document (.doc)
+ */
+export function downloadChatTranscriptWord(messages: ChatTranscriptMessage[]) {
+  const htmlContent = buildChatTranscriptWordHtml(messages);
+  const blob = new Blob(['\ufeff' + htmlContent], {
+    type: 'application/msword;charset=utf-8'
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const timestampStr = new Date().toISOString().slice(0, 10);
+  a.download = `CBUAE_AI_Guidance_Transcript_${timestampStr}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+

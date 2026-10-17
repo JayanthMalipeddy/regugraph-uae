@@ -112,18 +112,43 @@ export interface MortgageLTVResponse {
   max_mortgage_tenure_months: number;
 }
 
+export interface RAGTraceStep {
+  step: string;
+  description: string;
+  [key: string]: any;
+}
+
+export interface RAGMode {
+  id: string;
+  name: string;
+  summary: string;
+  tech_stack: string;
+  cost: string;
+  key_benefit: string;
+}
+
 export interface SearchResponse {
   query: string;
   answer: string;
   citation: string;
   refusal_triggered: boolean;
   refusal_category: string;
-  retrieved_chunks: {
+  is_greeting?: boolean;
+  rag_mode?: string;
+  title?: string;
+  tech_stack?: string;
+  execution_trace?: RAGTraceStep[];
+  reflection_tokens?: Record<string, string>;
+  sql_query?: string;
+  graph_triplets?: { source: string; target: string; relation: string }[];
+  retrieved_chunks?: {
     content: string;
     circular_ref: string;
     article_header: string;
     rrf_score: number;
+    distance?: number;
   }[];
+
   latency_ms: number;
 }
 
@@ -135,3 +160,4 @@ export interface RegulationDocument {
   full_content: string;
   token_count: number;
 }
+

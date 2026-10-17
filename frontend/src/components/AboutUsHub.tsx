@@ -36,24 +36,24 @@ export const AboutUsHub: React.FC<AboutUsHubProps> = ({
       {/* ============================================================== */}
       {/* 1. HERO VISION BANNER                                          */}
       {/* ============================================================== */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0d162b] via-[#09101f] to-[#060a14] border border-cyan-500/20 p-8 sm:p-10 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 dark:from-[#0d162b] dark:via-[#09101f] dark:to-[#060a14] border border-slate-200 dark:border-cyan-500/20 p-8 sm:p-10 shadow-xl dark:shadow-2xl">
         {/* Ambient Glows */}
         <div className="absolute -right-24 -top-24 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-24 -bottom-24 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-24 -bottom-24 w-96 h-96 bg-blue-600/5 dark:bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-4xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-wider">
-            <ShieldCheck className="h-4 w-4 text-cyan-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20 text-cyan-700 dark:text-cyan-400 text-xs font-semibold uppercase tracking-wider">
+            <ShieldCheck className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
             <span>ReguGraph-UAE • Banking Regulatory Intelligence Solution</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
             Protecting UAE Borrowers & Safeguarding Institutional Banking Compliance
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-3xl">
-            ReguGraph-UAE is an institutional-grade FinTech intelligence platform engineered to transform the complex regulatory directives of the 
-            <strong className="text-white"> Central Bank of the United Arab Emirates (CBUAE)</strong> into deterministic, automated, and executable software controls. 
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+            ReguGraph-UAE is an institutional-grade FinTech intelligence platform engineered to transform the complex regulatory directives of the{' '}
+            <strong className="text-slate-900 dark:text-white">Central Bank of the United Arab Emirates (CBUAE)</strong> into deterministic, automated, and executable software controls. 
             We empower individual borrowers to detect unlawful bank fees, eliminate predatory loan clauses, and demand statutory restitution—while enabling licensed financial institutions to guarantee flawless regulatory compliance.
           </p>
 
@@ -61,49 +61,49 @@ export const AboutUsHub: React.FC<AboutUsHubProps> = ({
           <div className="flex flex-wrap items-center gap-3 pt-3">
             <button
               onClick={() => onNavigateTab('dashboard')}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs shadow-xl transition-all cursor-pointer group"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-cyan-600 hover:bg-cyan-700 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 font-bold text-xs shadow-md dark:shadow-xl transition-all cursor-pointer group"
             >
               <span>Launch Audit Studio</span>
               <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={() => onNavigateTab('calculators')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#131b2e] hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-semibold text-xs transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 dark:bg-[#131b2e] dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold text-xs transition-all cursor-pointer shadow-xs"
             >
-              <Calculator className="h-3.5 w-3.5 text-cyan-400" />
+              <Calculator className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
               <span>Explore Statutory Calculators</span>
             </button>
             <button
               onClick={onOpenChatbot}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/50 text-cyan-300 font-semibold text-xs transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 border border-cyan-200 dark:border-cyan-800/50 text-cyan-800 dark:text-cyan-300 font-semibold text-xs transition-all cursor-pointer shadow-xs"
             >
-              <Bot className="h-3.5 w-3.5 text-cyan-400" />
+              <Bot className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
               <span>Consult AI Audit Agent</span>
             </button>
           </div>
         </div>
 
         {/* Quick KPI Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-8 border-t border-slate-800/80 relative z-10">
-          <div className="p-3 rounded-2xl bg-[#0a0f1d]/70 border border-slate-800">
-            <div className="text-[11px] text-slate-400 font-medium">Regulatory Grounding</div>
-            <div className="text-lg font-bold font-mono text-emerald-400 mt-0.5">100% CBUAE Corpus</div>
-            <div className="text-[10px] text-slate-500">Zero foreign hallucination</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-8 border-t border-slate-200 dark:border-slate-800/80 relative z-10">
+          <div className="p-3 rounded-2xl bg-white dark:bg-[#0a0f1d]/70 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Regulatory Grounding</div>
+            <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">100% CBUAE Corpus</div>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500">Zero foreign hallucination</div>
           </div>
-          <div className="p-3 rounded-2xl bg-[#0a0f1d]/70 border border-slate-800">
-            <div className="text-[11px] text-slate-400 font-medium">Early Payoff Statutory Cap</div>
-            <div className="text-lg font-bold font-mono text-cyan-400 mt-0.5">Max 1.0% or 10k AED</div>
-            <div className="text-[10px] text-slate-500">Notice 3877/2019 Art 4.3</div>
+          <div className="p-3 rounded-2xl bg-white dark:bg-[#0a0f1d]/70 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Early Payoff Statutory Cap</div>
+            <div className="text-lg font-bold font-mono text-cyan-600 dark:text-cyan-400 mt-0.5">Max 1.0% or 10k AED</div>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500">Notice 3877/2019 Art 4.3</div>
           </div>
-          <div className="p-3 rounded-2xl bg-[#0a0f1d]/70 border border-slate-800">
-            <div className="text-[11px] text-slate-400 font-medium">Debt Burden Ratio (DBR)</div>
-            <div className="text-lg font-bold font-mono text-amber-400 mt-0.5">50.0% Max Ceiling</div>
-            <div className="text-[10px] text-slate-500">30% for retirees/pensioners</div>
+          <div className="p-3 rounded-2xl bg-white dark:bg-[#0a0f1d]/70 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Debt Burden Ratio (DBR)</div>
+            <div className="text-lg font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">50.0% Max Ceiling</div>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500">30% for retirees/pensioners</div>
           </div>
-          <div className="p-3 rounded-2xl bg-[#0a0f1d]/70 border border-slate-800">
-            <div className="text-[11px] text-slate-400 font-medium">Dispute Restitution</div>
-            <div className="text-lg font-bold font-mono text-purple-400 mt-0.5">Sanadak Escalation</div>
-            <div className="text-[10px] text-slate-500">Official UAE Ombudsman</div>
+          <div className="p-3 rounded-2xl bg-white dark:bg-[#0a0f1d]/70 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Dispute Restitution</div>
+            <div className="text-lg font-bold font-mono text-purple-600 dark:text-purple-400 mt-0.5">Sanadak Escalation</div>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500">Official UAE Ombudsman</div>
           </div>
         </div>
       </div>
@@ -111,13 +111,13 @@ export const AboutUsHub: React.FC<AboutUsHubProps> = ({
       {/* ============================================================== */}
       {/* 2. SECTION FILTER PILLS                                        */}
       {/* ============================================================== */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold text-white tracking-tight">Solution Deep-Dive</h2>
-          <span className="text-xs text-slate-400 hidden sm:inline">— Comprehensive Platform Architecture</span>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Solution Deep-Dive</h2>
+          <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">— Comprehensive Platform Architecture</span>
         </div>
 
-        <div className="flex items-center bg-[#131b2e] p-1 rounded-2xl border border-slate-800 text-xs">
+        <div className="flex items-center bg-slate-100 dark:bg-[#131b2e] p-1 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
           {[
             { id: 'all', label: 'Overview' },
             { id: 'do', label: '1. What We Do' },
@@ -129,8 +129,8 @@ export const AboutUsHub: React.FC<AboutUsHubProps> = ({
               onClick={() => setActiveSection(tab.id as any)}
               className={`px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer ${
                 activeSection === tab.id
-                  ? 'bg-slate-800 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-bold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               {tab.label}

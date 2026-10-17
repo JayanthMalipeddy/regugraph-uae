@@ -21,28 +21,35 @@ from .core_math import (
 )
 
 
+from .retriever import is_ollama_online
+
+
 class RegulatoryLLM:
     """LLM wrapper with automatic fallback for local demo reliability."""
     def __init__(self):
-        self.is_available = False
-        try:
-            import requests
-            res = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=1.0)
-            if res.status_code == 200:
-                self.is_available = True
-        except Exception:
-            self.is_available = False
+        self.is_available = is_ollama_online()
+
 
     def invoke(self, prompt: str) -> str:
         if self.is_available:
             try:
-                from langchain_ollama import ChatOllama
-                llm = ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL, temperature=0.1)
-                res = llm.invoke(prompt)
-                return res.content
+                import requests
+                payload = {
+                    "model": OLLAMA_MODEL,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {"num_predict": 120, "temperature": 0.1}
+                }
+                res = requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=2.0)
+                if res.status_code == 200:
+                    data = res.json()
+                    ans = data.get("response", "").strip()
+                    if ans:
+                        return ans
             except Exception:
                 pass
         return ""
+
 
 
 # Shared retriever instance

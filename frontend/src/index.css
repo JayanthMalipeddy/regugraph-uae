@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
@@ -59,4 +60,231 @@
 
 .animate-pulse-subtle {
   animation: pulseSubtle 2.5s infinite ease-in-out;
+}
+
+/* ============================================================== */
+/* LIGHT THEME STYLES (Activated when html.light or .light)        */
+/* ============================================================== */
+
+html.light {
+  color-scheme: light;
+}
+
+html.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html.light .min-h-screen {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Structural Shell: Sidebar, Navbar, Footer */
+html.light aside {
+  background-color: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+  box-shadow: 2px 0 8px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+html.light header {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+html.light footer {
+  background-color: #ffffff !important;
+  border-top-color: #e2e8f0 !important;
+}
+
+/* Card surfaces: .bg-[#0f172a], .bg-[#0e1629], .bg-[#0d1527] */
+html.light .bg-\[\#0f172a\],
+html.light .bg-\[\#0f172a\]\/70,
+html.light .bg-\[\#0f172a\]\/80,
+html.light .bg-\[\#0f172a\]\/90,
+html.light .bg-\[\#0e1629\],
+html.light .bg-\[\#0d1527\] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.03) !important;
+}
+
+/* Wells and Inner Containers: .bg-[#0a0f1d], .bg-[#0c1322], .bg-[#0b1222], .bg-[#050811], .bg-[#070b14] */
+html.light .bg-\[\#0a0f1d\],
+html.light .bg-\[\#0a0f1d\]\/40,
+html.light .bg-\[\#0a0f1d\]\/50,
+html.light .bg-\[\#0a0f1d\]\/60,
+html.light .bg-\[\#0a0f1d\]\/80,
+html.light .bg-\[\#0c1322\],
+html.light .bg-\[\#0b1222\],
+html.light .bg-\[\#050811\],
+html.light .bg-\[\#070b14\],
+html.light .bg-\[\#070c18\],
+html.light .bg-slate-950,
+html.light .bg-slate-900,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/40 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Buttons, Chips, and Input Bars: .bg-[#131b2e] */
+html.light .bg-\[\#131b2e\],
+html.light .hover\:bg-slate-800:hover,
+html.light .hover\:bg-slate-800\/80:hover {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* Typography Overrides */
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.light .text-cyan-300,
+html.light .text-cyan-400 {
+  color: #0891b2 !important;
+}
+
+html.light .text-emerald-300,
+html.light .text-emerald-400 {
+  color: #059669 !important;
+}
+
+/* Ensure buttons, badges, and dark chips retain high-contrast white text in Light Mode */
+html.light .bg-cyan-600,
+html.light .bg-cyan-700,
+html.light .bg-blue-600,
+html.light .bg-emerald-600,
+html.light .bg-rose-600,
+html.light .bg-slate-900,
+html.light button.bg-cyan-600,
+html.light button.bg-cyan-700,
+html.light button.bg-slate-900 {
+  color: #ffffff !important;
+}
+
+html.light .bg-cyan-600 *,
+html.light .bg-cyan-700 *,
+html.light .bg-blue-600 *,
+html.light .bg-emerald-600 *,
+html.light .bg-rose-600 *,
+html.light .bg-slate-900 *,
+html.light button.bg-cyan-600 *,
+html.light button.bg-cyan-700 *,
+html.light button.bg-slate-900 * {
+  color: #ffffff !important;
+}
+
+/* Border overrides */
+html.light .border-slate-800,
+html.light .border-slate-800\/90,
+html.light .border-slate-800\/80,
+html.light .border-slate-800\/70,
+html.light .border-slate-800\/60,
+html.light .border-slate-800\/50,
+html.light .border-slate-700,
+html.light .border-slate-700\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Inputs, textareas, selects */
+html.light input,
+html.light textarea,
+html.light select {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Hero Feature Banner in Light Mode */
+html.light .bg-gradient-to-r.from-\[\#101b33\] {
+  background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 50%, #f8fafc 100%) !important;
+  border-color: #a5f3fc !important;
+  box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.12) !important;
+}
+
+html.light .bg-gradient-to-r.from-\[\#101b33\] h2 {
+  color: #0f172a !important;
+}
+
+html.light .bg-gradient-to-r.from-\[\#101b33\] p {
+  color: #334155 !important;
+}
+
+html.light .bg-gradient-to-r.from-\[\#101b33\] button.bg-white {
+  background-color: #0891b2 !important;
+  color: #ffffff !important;
+}
+
+html.light .bg-gradient-to-r.from-\[\#101b33\] button.bg-white:hover {
+  background-color: #0e7490 !important;
+}
+
+/* Active Nav Button in Sidebar */
+html.light aside nav button.bg-white {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+html.light aside nav button.bg-white .text-slate-950,
+html.light aside nav button.bg-white span,
+html.light aside nav button.bg-white svg {
+  color: #ffffff !important;
+}
+
+/* Active/selected case study in benchmarks dock */
+html.light .bg-cyan-950\/20 {
+  background-color: #ecfeff !important;
+  border-color: #06b6d4 !important;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15) !important;
+}
+
+/* Digital Bank Card text protection */
+html.light .rounded-3xl.p-6.bg-gradient-to-tr *,
+html.light .rounded-3xl.p-6.bg-gradient-to-tr .text-white,
+html.light .rounded-3xl.p-6.bg-gradient-to-tr span,
+html.light .rounded-3xl.p-6.bg-gradient-to-tr div {
+  color: #ffffff !important;
+}
+html.light .rounded-3xl.p-6.bg-gradient-to-tr .text-cyan-100,
+html.light .rounded-3xl.p-6.bg-gradient-to-tr .text-cyan-200 {
+  color: #cffafe !important;
+}
+html.light .rounded-3xl.p-6.bg-gradient-to-tr .text-slate-950 {
+  color: #020617 !important;
+}
+
+/* SVG Chart grid lines */
+html.light svg line[stroke="#1e293b"] {
+  stroke: #e2e8f0 !important;
+}
+
+/* AI Audit Agent window in Light Mode */
+html.light .fixed.bottom-6.right-6 .bg-\[\#0f172a\] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+html.light .fixed.bottom-6.right-6 .bg-\[\#0a0f1d\] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+html.light .fixed.bottom-6.right-6 .bg-\[\#0a0f1d\]\/50 {
+  background-color: #f8fafc !important;
 }

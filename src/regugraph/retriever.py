@@ -21,17 +21,26 @@ from .config import (
 from .ingestion import load_cbuae_corpus
 
 
+_OLLAMA_CHECKED = None
+
+def is_ollama_online() -> bool:
+    global _OLLAMA_CHECKED
+    if _OLLAMA_CHECKED is None:
+        import socket
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.04)
+                _OLLAMA_CHECKED = (s.connect_ex(("127.0.0.1", 11434)) == 0)
+        except Exception:
+            _OLLAMA_CHECKED = False
+    return _OLLAMA_CHECKED
+
+
 class RobustEmbeddingFunction:
     """Embedding adapter that attempts Ollama nomic-embed-text, with deterministic local fallback."""
     def __init__(self):
-        self.use_ollama = False
-        try:
-            import requests
-            res = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=0.8)
-            if res.status_code == 200:
-                self.use_ollama = True
-        except Exception:
-            self.use_ollama = False
+        self.use_ollama = is_ollama_online()
+
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         if self.use_ollama:
@@ -69,10 +78,23 @@ class HybridRetriever:
     
     def __init__(self, collection_name: str = "cbuae_regulations"):
         self.collection_name = collection_name
+        import socket
+        use_remote = False
         try:
-            self.chroma_client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
-            self.chroma_client.heartbeat()
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.05)
+                if s.connect_ex((CHROMA_HOST, CHROMA_PORT)) == 0:
+                    use_remote = True
         except Exception:
+            use_remote = False
+
+        if use_remote:
+            try:
+                self.chroma_client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
+                self.chroma_client.heartbeat()
+            except Exception:
+                self.chroma_client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+        else:
             self.chroma_client = chromadb.PersistentClient(path=str(CHROMA_DIR))
 
         self.embed_fn = RobustEmbeddingFunction()

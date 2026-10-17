@@ -3,13 +3,14 @@ import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { AuditStudio } from './components/AuditStudio';
 import { CalculatorsHub } from './components/CalculatorsHub';
-import { DiagnosticsHub } from './components/DiagnosticsHub';
 import { AboutUsHub } from './components/AboutUsHub';
+import { RAGLearningHub } from './components/RAGLearningHub';
 import { AuthModal } from './components/AuthModal';
+
 import { AIAuditAgent } from './components/AIAuditAgent';
-import { fetchHealth, fetchScenarios } from './services/api';
-import type { HealthStatus, ContractScenario } from './types';
-import { ShieldCheck, ExternalLink } from 'lucide-react';
+import { fetchScenarios } from './services/api';
+import type { ContractScenario } from './types';
+import { ShieldCheck, Bell, Activity, ExternalLink } from 'lucide-react';
 
 interface UserProfile {
   name: string;
@@ -21,9 +22,30 @@ interface UserProfile {
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [health, setHealth] = useState<HealthStatus | null>(null);
   const [scenarios, setScenarios] = useState<ContractScenario[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Theme State (Dark or Light)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('regugraph_theme');
+    return saved === 'light' || saved === 'dark' ? saved : 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('regugraph_theme', theme);
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    } else {
+      root.classList.remove('light');
+      root.classList.add('dark');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   // Sidebar Expand / Collapse State
   const [isSidebarExpanded, setIsSidebarExpanded] = useState<boolean>(false);
@@ -39,14 +61,12 @@ export function App() {
 
   // Initial load
   useEffect(() => {
-    Promise.all([
-      fetchHealth().catch(() => null),
-      fetchScenarios().catch(() => [])
-    ]).then(([healthData, scenariosData]) => {
-      setHealth(healthData);
-      setScenarios(scenariosData);
-      setIsLoading(false);
-    });
+    fetchScenarios()
+      .catch(() => [])
+      .then((scenariosData) => {
+        setScenarios(scenariosData);
+        setIsLoading(false);
+      });
   }, []);
 
   // Global search triggers AI Audit Agent chatbot with user inquiry
@@ -64,7 +84,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex font-sans selection:bg-cyan-500/20 selection:text-cyan-400">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#070b14] text-slate-800 dark:text-slate-100 flex font-sans selection:bg-cyan-500/20 selection:text-cyan-400 transition-colors">
       
       {/* Left Collapsible/Expandable Sidebar */}
       <Sidebar
@@ -92,6 +112,8 @@ export function App() {
             setIsAuthOpen(true);
           }}
           onLogout={() => setCurrentUser(null)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
 
         {/* Content View */}
@@ -109,7 +131,43 @@ export function App() {
                 <AuditStudio scenarios={scenarios} onNavigateTab={setActiveTab} />
               )}
               {activeTab === 'calculators' && <CalculatorsHub />}
-              {activeTab === 'diagnostics' && <DiagnosticsHub health={health} />}
+              {activeTab === 'rag-learning' && <RAGLearningHub />}
+              {activeTab === 'diagnostics' && (
+                <div className="max-w-2xl mx-auto py-16 px-6 text-center space-y-6 animate-in fade-in duration-200">
+                  <div className="h-16 w-16 mx-auto rounded-3xl bg-cyan-600 text-white flex items-center justify-center shadow-lg shadow-cyan-600/30">
+                    <Activity className="h-8 w-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
+                      ISOLATED SERVICE: PORT 5174
+                    </span>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                      Diagnostics & Telemetry Portal
+                    </h1>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+                      Diagnostics and telemetry have been isolated to an independent administrative service on <strong>port 5174</strong> to keep the primary demonstration environment clean and high-performing.
+                    </p>
+                  </div>
+
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a
+                      href="http://localhost:5174"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs shadow-lg shadow-cyan-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    >
+                      <span>Open Diagnostics Portal (Port 5174)</span>
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                    <button
+                      onClick={() => setActiveTab('dashboard')}
+                      className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#131b2e] dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-800 transition-all cursor-pointer"
+                    >
+                      Return to Dashboard
+                    </button>
+                  </div>
+                </div>
+              )}
               {activeTab === 'about' && (
                 <AboutUsHub
                   onNavigateTab={setActiveTab}
@@ -120,35 +178,35 @@ export function App() {
           )}
         </main>
 
+
         {/* Minimal Institutional Footer */}
-        <footer className="border-t border-slate-800/60 bg-[#0a0f1d] py-6 px-6 sm:px-8 mt-auto">
+        <footer className="border-t border-slate-200 dark:border-slate-800/60 bg-white dark:bg-[#0a0f1d] py-6 px-6 sm:px-8 mt-auto transition-colors">
           <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-cyan-400" />
-              <span className="font-semibold text-slate-300">ReguGraph.ae</span>
-              <span>—</span>
-              <span>Central Bank of the United Arab Emirates (CBUAE) Regulatory Compliance Engine</span>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                <span className="font-bold text-slate-800 dark:text-slate-200">ReguGraph</span>
+              </div>
+              <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">·</span>
+              <span className="text-slate-500 dark:text-slate-400 text-center sm:text-left">
+                Central Bank of the UAE Regulatory Intelligence & Credit Facility Audit Platform
+              </span>
             </div>
 
-            <div className="flex items-center gap-4 text-[11px]">
+            <div className="flex items-center gap-5">
+              <div
+                className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs select-none"
+                title="All CBUAE regulatory circulars are up to date"
+              >
+                <Bell className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                <span>No notifications</span>
+              </div>
               <button
                 onClick={() => setActiveTab('about')}
-                className="text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
+                className="text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors cursor-pointer text-xs font-medium"
               >
-                About Solution
+                About
               </button>
-              <span className="font-mono text-slate-400">Notice 2011/23 (DBR)</span>
-              <span className="font-mono text-slate-400">Notice 3877/2019 (1% Cap)</span>
-              <span className="font-mono text-slate-400">Circular 31/2013 (Mortgage)</span>
-              <a
-                href="http://localhost:8000/docs"
-                target="_blank"
-                rel="noreferrer"
-                className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono font-medium"
-              >
-                <span>REST API Specs</span>
-                <ExternalLink className="h-3 w-3" />
-              </a>
             </div>
           </div>
         </footer>
