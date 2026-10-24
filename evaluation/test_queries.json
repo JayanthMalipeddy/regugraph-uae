@@ -3,120 +3,475 @@
     "id": "Q01",
     "category": "statutory_cap",
     "query": "What is the maximum early settlement fee that a UAE bank can charge on a retail loan?",
-    "expected_answer_contains": ["1%", "10,000", "whichever is lower"],
-    "expected_citation": "Circular 8/2020 Art 4.3",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "1%",
+      "10,000",
+      "whichever is lower"
+    ],
+    "required_evidence_terms": [
+      "1%",
+      "10,000"
+    ],
+    "expected_citation": "Circular 8/2020 Section 4.3",
+    "expected_instrument": "Circular No. 8/2020",
+    "expected_article": "Section 4.3",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Circular No. 8/2020",
+        "article": "Section 4.3",
+        "evidence_terms": [
+          "1%",
+          "10,000"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending"
   },
   {
     "id": "Q02",
     "category": "dbr_limit",
     "query": "What is the maximum allowable Debt Burden Ratio (DBR) for salaried individuals under CBUAE rules?",
-    "expected_answer_contains": ["50%", "gross monthly salary"],
-    "expected_citation": "Notice 2011/23 Art 7.1",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "50%",
+      [
+        "gross monthly salary",
+        "gross monthly income"
+      ]
+    ],
+    "required_evidence_terms": [
+      "50%"
+    ],
+    "expected_citation": "Notice 2011/23 Article 7.1",
+    "expected_instrument": "Notice No. 2011/23",
+    "expected_article": "Article 7",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Notice No. 2011/23",
+        "article": "Article 7",
+        "evidence_terms": [
+          "50%"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending"
   },
   {
     "id": "Q03",
     "category": "tenure_limit",
     "query": "What is the maximum permitted repayment tenure for a personal consumer loan in the UAE?",
-    "expected_answer_contains": ["48 months", "4 years"],
-    "expected_citation": "Notice 2011/23 Art 2.2",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      [
+        "48 months",
+        "4 years"
+      ]
+    ],
+    "required_evidence_terms": [
+      "48 months"
+    ],
+    "expected_citation": "Notice 2011/23 Article 2.2",
+    "expected_instrument": "Notice No. 2011/23",
+    "expected_article": "Article 2",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Notice No. 2011/23",
+        "article": "Article 2",
+        "evidence_terms": [
+          "48 months"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending"
   },
   {
     "id": "Q04",
     "category": "tenure_limit",
     "query": "How many years can an expatriate take for a residential mortgage in the UAE?",
-    "expected_answer_contains": ["25 years", "300 months"],
-    "expected_citation": "Circular 31/2013 Art 6.1",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      [
+        "25 years",
+        "300 months"
+      ]
+    ],
+    "required_evidence_terms": [
+      "25 years"
+    ],
+    "expected_citation": "Circular 31/2013 Article 6.1",
+    "expected_instrument": "Circular No. 31/2013",
+    "expected_article": "Article 6",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Circular No. 31/2013",
+        "article": "Article 6",
+        "evidence_terms": [
+          "25 years"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending"
   },
   {
     "id": "Q05",
     "category": "fee_caps",
     "query": "What is the statutory limit on loan processing fees for personal loans in the UAE?",
-    "expected_answer_contains": ["1.0%", "AED 2,500", "whichever is lower"],
-    "expected_citation": "Circular 8/2020 Art 4.2",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "1.0%",
+      "AED 2,500",
+      "whichever is lower"
+    ],
+    "required_evidence_terms": [
+      "1.0%",
+      "2,500"
+    ],
+    "expected_citation": "Circular 8/2020 Section 4.2",
+    "expected_instrument": "Circular No. 8/2020",
+    "expected_article": "Section 4.2",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Circular No. 8/2020",
+        "article": "Section 4.2",
+        "evidence_terms": [
+          "1.0%",
+          "2,500"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending"
   },
   {
     "id": "Q06",
     "category": "fee_caps",
     "query": "What is the maximum late payment charge permitted per billing cycle for retail loans?",
-    "expected_answer_contains": ["AED 150", "no compounding"],
-    "expected_citation": "CBUAE Standardized Retail Fee Schedule",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "AED 150",
+      "no compounding"
+    ],
+    "required_evidence_terms": [
+      "150"
+    ],
+    "expected_citation": "Circular 8/2020 Section 4.2 (local corpus)",
+    "expected_instrument": "Circular No. 8/2020",
+    "expected_article": "Section 4.2",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Circular No. 8/2020",
+        "article": "Section 4.2",
+        "evidence_terms": [
+          "AED 150",
+          "no compounding"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending",
+    "rubric_note": "Original Fee Schedule label disagreed with parsed corpus metadata. Section 4.2 explicitly contains both expected facts; this correction is corpus alignment, not legal validation."
   },
   {
     "id": "Q07",
     "category": "mortgage_ltv",
     "query": "What is the maximum Loan-to-Value (LTV) for an expatriate buying a first home valued under AED 5 million?",
-    "expected_answer_contains": ["80%", "20% down payment"],
-    "expected_citation": "Circular 31/2013 Art 3.2",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "80%",
+      "20% down payment"
+    ],
+    "required_evidence_terms": [
+      "80%"
+    ],
+    "expected_citation": "Circular 31/2013 Article 3.2",
+    "expected_instrument": "Circular No. 31/2013",
+    "expected_article": "Article 3",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Circular No. 31/2013",
+        "article": "Article 3",
+        "evidence_terms": [
+          "80%"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending"
   },
   {
     "id": "Q08",
     "category": "multi_hop_comparison",
     "query": "Compare the maximum loan tenure between an auto loan and a personal loan in the UAE.",
-    "expected_answer_contains": ["60 months", "48 months"],
-    "expected_citation": "Notice 2011/23",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "60 months",
+      "48 months"
+    ],
+    "required_evidence_terms": [
+      "60 months",
+      "48 months"
+    ],
+    "expected_citation": "Notice 2011/23 Articles 2 & 5",
+    "expected_instrument": "Notice No. 2011/23",
+    "expected_article": "Article 2",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Notice No. 2011/23",
+        "article": "Article 2",
+        "evidence_terms": [
+          "48 months"
+        ]
+      },
+      {
+        "instrument": "Notice No. 2011/23",
+        "article": "Article 5",
+        "evidence_terms": [
+          "60 months"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending",
+    "answer_claim_patterns": [
+      "(?:personal|personal loan)[^.;]{0,150}48\\s+months",
+      "(?:auto|car|vehicle)[^.;]{0,150}60\\s+months"
+    ],
+    "forbidden_answer_patterns": [
+      "(?:personal loan)[^.;]{0,40}60\\s+months",
+      "(?:auto loan|car loan)[^.;]{0,40}48\\s+months"
+    ]
   },
   {
     "id": "Q09",
     "category": "multi_hop_synthesis",
     "query": "If an expat borrows AED 1,500,000 for a mortgage and prepays early, why is the fee capped at AED 10,000 instead of AED 15,000?",
-    "expected_answer_contains": ["10,000", "lower of 1% or AED 10,000"],
-    "expected_citation": "Notice 3877/2019 & Circular 8/2020",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "1%",
+      "10,000",
+      [
+        "whichever is lower",
+        "lower of 1% or AED 10,000"
+      ]
+    ],
+    "required_evidence_terms": [
+      "10,000",
+      "1%"
+    ],
+    "expected_citation": "Circular 8/2020 Section 4.3 and Circular 31/2013 Article 8 (references Notice 3877/2019)",
+    "expected_instrument": "Circular No. 8/2020",
+    "expected_article": "Section 4.3",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Circular No. 8/2020",
+        "article": "Section 4.3",
+        "evidence_terms": [
+          "10,000",
+          "1%"
+        ]
+      },
+      {
+        "instrument": "Circular No. 31/2013",
+        "article": "Article 8",
+        "evidence_terms": [
+          "10,000",
+          "1%",
+          "Notice No. 3877/2019"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending",
+    "rubric_note": "Notice 3877/2019 is referenced inside the mortgage document; no standalone notice is present in the corpus."
   },
   {
     "id": "Q10",
     "category": "borrower_type_variance",
     "query": "How does the DBR cap differ for a pensioner or retiree compared to a salaried employee?",
-    "expected_answer_contains": ["30%", "50%"],
-    "expected_citation": "Notice 2011/23 Art 7.1.3",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "30%",
+      "50%"
+    ],
+    "required_evidence_terms": [
+      "30%",
+      "50%"
+    ],
+    "expected_citation": "Notice 2011/23 Article 7.1.3",
+    "expected_instrument": "Notice No. 2011/23",
+    "expected_article": "Article 7",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Notice No. 2011/23",
+        "article": "Article 7",
+        "evidence_terms": [
+          "30%",
+          "50%"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending",
+    "answer_claim_patterns": [
+      "(?:pensioners?|retirees?)[^.;]{0,180}30%",
+      "(?:salary|income|50%)[^.;]{0,100}(?:50%|salary|income)"
+    ],
+    "forbidden_answer_patterns": [
+      "(?:pensioners?|retirees?)[^.;]{0,45}(?:cap|ceiling|limit)[^.;]{0,20}50%"
+    ]
   },
   {
     "id": "Q11",
     "category": "edge_case_balloon",
     "query": "Are balloon payment schemes permitted for retail consumer loans under CBUAE regulations?",
-    "expected_answer_contains": ["prohibited", "unlawful"],
-    "expected_citation": "Circular 8/2020 Art 7.2",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "balloon",
+      [
+        "unlawful",
+        "prohibited"
+      ],
+      [
+        "mask",
+        "defer",
+        "statutory limits"
+      ]
+    ],
+    "required_evidence_terms": [
+      "balloon",
+      "prohibit"
+    ],
+    "expected_citation": "Circular 8/2020 Article 7.2",
+    "expected_instrument": "Circular No. 8/2020",
+    "expected_article": "Article 7",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Circular No. 8/2020",
+        "article": "Article 7",
+        "evidence_terms": [
+          "balloon",
+          "unlawful"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending",
+    "forbidden_answer_patterns": [
+      "balloon payments? (?:are |is )?(?:permitted|allowed|lawful)",
+      "not (?:prohibited|unlawful)"
+    ]
   },
   {
     "id": "Q12",
     "category": "cooling_off_rights",
     "query": "What cooling-off period is guaranteed to retail borrowers after signing a loan agreement?",
-    "expected_answer_contains": ["business days", "without penalty", "cooling-off"],
-    "expected_citation": "Circular 8/2020 Art 4.1",
-    "is_refusal_expected": false
+    "expected_answer_contains": [
+      "5 business days",
+      "without penalty",
+      "cooling-off"
+    ],
+    "required_evidence_terms": [
+      "cooling",
+      "5"
+    ],
+    "expected_citation": "Circular 8/2020 Section 4.1",
+    "expected_instrument": "Circular No. 8/2020",
+    "expected_article": "Section 4.1",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Circular No. 8/2020",
+        "article": "Section 4.1",
+        "evidence_terms": [
+          "5 business days",
+          "without penalty",
+          "cooling-off"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending"
   },
   {
     "id": "Q13",
     "category": "refusal_out_of_jurisdiction",
     "query": "What are the UK Financial Conduct Authority (FCA) regulations on maximum APR for payday loans?",
-    "expected_answer_contains": ["Out of Jurisdiction", "CBUAE"],
+    "expected_answer_contains": [
+      "Out of Jurisdiction",
+      "CBUAE"
+    ],
+    "required_evidence_terms": [],
     "expected_citation": "N/A - Refusal Gate",
-    "is_refusal_expected": true
+    "expected_instrument": "Refusal Gate",
+    "expected_article": "Jurisdiction Gate",
+    "is_refusal_expected": true,
+    "expected_refusal_category": "foreign_jurisdiction"
   },
   {
     "id": "Q14",
     "category": "refusal_ungrounded_topic",
     "query": "What is the CBUAE reserve requirement for decentralized cryptocurrency staking pools?",
-    "expected_answer_contains": ["not found in corpus", "unsupported"],
+    "expected_answer_contains": [
+      "not found in corpus",
+      "unsupported"
+    ],
+    "required_evidence_terms": [],
     "expected_citation": "N/A - Refusal Gate",
-    "is_refusal_expected": true
+    "expected_instrument": "Refusal Gate",
+    "expected_article": "Ungrounded Topic Gate",
+    "is_refusal_expected": true,
+    "expected_refusal_category": "ungrounded_domain"
   },
   {
     "id": "Q15",
     "category": "refusal_us_law",
     "query": "What are the Federal Reserve Regulation Z disclosure mandates for US credit cards?",
-    "expected_answer_contains": ["Out of Jurisdiction", "CBUAE"],
+    "expected_answer_contains": [
+      "Out of Jurisdiction",
+      "CBUAE"
+    ],
+    "required_evidence_terms": [],
     "expected_citation": "N/A - Refusal Gate",
-    "is_refusal_expected": true
+    "expected_instrument": "Refusal Gate",
+    "expected_article": "Jurisdiction Gate",
+    "is_refusal_expected": true,
+    "expected_refusal_category": "foreign_jurisdiction"
+  },
+  {
+    "id": "Q16",
+    "category": "greeting_with_in_scope_question",
+    "query": "Hi, what is the maximum Debt Burden Ratio for a salaried borrower under CBUAE rules?",
+    "expected_answer_contains": [
+      "50%",
+      [
+        "gross monthly salary",
+        "gross monthly income"
+      ]
+    ],
+    "required_evidence_terms": [
+      "50%"
+    ],
+    "expected_citation": "Notice 2011/23 Article 7.1",
+    "expected_instrument": "Notice No. 2011/23",
+    "expected_article": "Article 7",
+    "is_refusal_expected": false,
+    "expected_citations": [
+      {
+        "instrument": "Notice No. 2011/23",
+        "article": "Article 7",
+        "evidence_terms": [
+          "50%"
+        ]
+      }
+    ],
+    "gold_source": "Checked-in corpus; independent legal review pending"
+  },
+  {
+    "id": "Q17",
+    "category": "greeting_with_foreign_question",
+    "query": "Hello, what are the UK FCA rules on payday loans?",
+    "expected_answer_contains": [
+      "Out of Jurisdiction",
+      "CBUAE"
+    ],
+    "required_evidence_terms": [],
+    "expected_citation": "N/A - Refusal Gate",
+    "expected_instrument": "Refusal Gate",
+    "expected_article": "Jurisdiction Gate",
+    "is_refusal_expected": true,
+    "expected_refusal_category": "foreign_jurisdiction"
   }
 ]

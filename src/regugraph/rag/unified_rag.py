@@ -134,7 +134,6 @@ def evaluate_query_guardrails(query: str) -> Optional[Dict[str, Any]]:
     # 1. Natural Conversational Greeting Detection
     greeting_patterns = [
         r"^(hi|hello|hey|greetings|good\s+morning|good\s+afternoon|good\s+evening|salam|marhaba)[\s!.,?]*$",
-        r"^(hi|hello|hey|salam|marhaba)\b",
         r"^(who\s+are\s+you|what\s+can\s+you\s+do|how\s+can\s+you\s+help|what\s+is\s+this\s+website|tell\s+me\s+about\s+yourself)[\s?!.,]*$"
     ]
     if any(re.search(p, q_lower) for p in greeting_patterns):
@@ -303,10 +302,29 @@ def execute_unified_rag(query: str, mode: str = "agentic") -> Dict[str, Any]:
         result = run_agentic_rag(query)
 
     # Standardize result attributes
-    result["refusal_triggered"] = False
-    result["refusal_category"] = "in_scope"
+    result.setdefault("refusal_triggered", False)
+    result.setdefault("refusal_category", "in_scope")
     result["is_greeting"] = False
     result["rag_mode"] = norm_mode
     result["rag_metadata"] = RAG_MODES_REGISTRY.get(norm_mode, {})
+
+    # Ensure standardized retrieved_chunks is available across all 10 modes
+    if "retrieved_chunks" not in result or not result["retrieved_chunks"]:
+        raw_chunks = (
+            result.get("ranked_chunks") or
+            result.get("matched_chunks") or
+            result.get("top_reranked_chunks") or
+            result.get("top_contextual_chunks") or
+            result.get("vector_chunks") or
+            result.get("narrative_chunks") or
+            []
+        )
+        std_chunks = []
+        for rc in raw_chunks:
+            c = dict(rc)
+            if "content" not in c:
+                c["content"] = c.get("contextualized_content", c.get("contextualized_preview", ""))
+            std_chunks.append(c)
+        result["retrieved_chunks"] = std_chunks
 
     return result

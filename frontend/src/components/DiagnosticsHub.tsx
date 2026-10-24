@@ -36,6 +36,9 @@ interface DiagnosticsHubProps {
   health: HealthStatus | null;
 }
 
+const metric = (value: number | null | undefined, suffix = '%') =>
+  value == null ? 'N/A' : `${value.toFixed(1)}${suffix}`;
+
 export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
   const [evalData, setEvalData] = useState<any>(null);
   const [evalHistory, setEvalHistory] = useState<any[]>([]);
@@ -97,9 +100,10 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
         fetchLatestEvaluation(),
         fetchEvaluationHistory().catch(() => ({ history: [] }))
       ]);
-      setEvalData(latest);
+      setEvalData(latest.scorer_version === '2.0' ? latest : null);
       setEvalHistory(histRes.history || []);
     } catch (err: any) {
+      setEvalData(null);
       console.error('Error fetching evaluation data from ChromaDB:', err);
       setStatusBanner('Could not fetch evaluation from ChromaDB. Please click "Re-run RAG Evals".');
     } finally {
@@ -114,7 +118,7 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
   // Trigger manual live evaluation re-run and ChromaDB persistence
   const handleRunEvaluation = async () => {
     setIsRunningEvals(true);
-    setStatusBanner('Executing 15-inquiry benchmark suite against CBUAE vector index & calculating scores...');
+    setStatusBanner('Executing all-mode benchmark suite against CBUAE vector index & calculating scores...');
     try {
       const result = await runLiveEvaluation();
       setEvalData(result);
@@ -131,175 +135,29 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
     }
   };
 
-  const testCases = evalData?.cases || [];
+  const activeMode = evalData?.mode_evaluations?.find((m: any) => m.id === selectedModeId);
+  const testCases = activeMode?.cases || evalData?.cases || [];
   const filteredCases = testCases.filter((tc: any) => {
     if (benchmarkFilter === 'in_scope') return !tc.refusal_expected;
     if (benchmarkFilter === 'refusal') return tc.refusal_expected;
     return true;
   });
 
-  const overallScore = evalData?.overall_score ?? 100.0;
-  const passedCases = evalData?.passed_cases ?? testCases.length;
-  const totalCases = evalData?.total_cases ?? testCases.length;
+  const overallScore = evalData?.overall_score ?? null;
+  const passedCases = evalData?.passed_cases ?? 'N/A';
+  const totalCases = evalData?.total_cases ?? 'N/A';
 
-  const modeEvaluations = evalData?.mode_evaluations || [
-    {
-      id: "hybrid",
-      name: "1. Hybrid Search RAG",
-      concept: "Dense ChromaDB (HNSW Cosine) + Sparse BM25Okapi with Reciprocal Rank Fusion (RRF, k=60)",
-      tech_stack: "Python 3.12 · rank-bm25 · ChromaDB · RRF",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 100.0,
-      avg_latency_ms: 14.8,
-      overall_score: 100.0,
-      badge: "Speed & Lexical Champion",
-      key_strength: "Eliminates vocabulary mismatch while preserving exact statutory article codes and numerical caps.",
-      ideal_use_case: "Statutory numerical inquiries, exact circular reference queries, and high-throughput lookups."
-    },
-    {
-      id: "metadata",
-      name: "2. Metadata-Filtered RAG",
-      concept: "Dense semantic search with strict categorical ChromaDB where predicates and Pydantic validation",
-      tech_stack: "Python 3.12 · ChromaDB $where Filters · Pydantic Schemas",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 98.5,
-      avg_latency_ms: 18.2,
-      overall_score: 99.6,
-      badge: "Categorical Guard",
-      key_strength: "Prevents cross-facility context contamination (e.g., mortgage LTV rules never contaminate auto audits).",
-      ideal_use_case: "Facility-specific compliance audits (Personal, Auto, Mortgage, Fee Schedule partitions)."
-    },
-    {
-      id: "reranking",
-      name: "3. Reranking RAG",
-      concept: "Two-stage retrieval: broad bi-encoder candidate pool (top-8) cross-scored to top-2 ultra-relevant chunks",
-      tech_stack: "Python 3.12 · ChromaDB Bi-Encoder · Local Lexical & Numerical Cross-Scorer",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 100.0,
-      avg_latency_ms: 24.5,
-      overall_score: 100.0,
-      badge: "High Density Precision",
-      key_strength: "Prunes 75% of noisy candidate chunks, sending only the top-2 highest relevance passages to the LLM.",
-      ideal_use_case: "Dense regulatory queries where candidate retrieval has high initial noise."
-    },
-    {
-      id: "contextual",
-      name: "4. Contextual Chunking RAG",
-      concept: "Markdown AST parser injecting parent legal authority and hierarchical breadcrumbs into each chunk",
-      tech_stack: "Python 3.12 · Hierarchical Markdown AST · Contextual Breadcrumbs · ChromaDB",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 100.0,
-      avg_latency_ms: 21.3,
-      overall_score: 100.0,
-      badge: "Zero Chunk Amnesia",
-      key_strength: "Retains parent circular authority, article hierarchy, and legal scope so passages never lose meaning.",
-      ideal_use_case: "Sub-clauses, statutory exceptions, and fine-print footnotes."
-    },
-    {
-      id: "sql",
-      name: "5. SQL + Vector RAG",
-      concept: "Deterministic SQLite relational queries for financial caps fused with vector retrieval for legal prose",
-      tech_stack: "Python 3.12 · SQLite (cbuae_structured.db) · ChromaDB · Structured-Vector Fusion",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 100.0,
-      avg_latency_ms: 12.4,
-      overall_score: 100.0,
-      badge: "Deterministic Math Champion",
-      key_strength: "Guarantees zero-hallucination arithmetic from relational tables combined with statutory narrative.",
-      ideal_use_case: "Numerical cap checks, quantitative borrower limits, and exact threshold queries."
-    },
-    {
-      id: "graph",
-      name: "6. Knowledge Graph + Vector RAG (GraphRAG)",
-      concept: "NetworkX DiGraph multi-hop entity traversal (Authority -> Circular -> Article -> Constraint -> Remedy)",
-      tech_stack: "Python 3.12 · NetworkX Directed Graph (DiGraph) · ChromaDB · Entity-Triplet Traversal",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 100.0,
-      avg_latency_ms: 26.8,
-      overall_score: 100.0,
-      badge: "Multi-Hop Reasoning",
-      key_strength: "Connects disjoint legal entities across multiple circulars to answer compound relational questions.",
-      ideal_use_case: "Cross-circular comparisons, regulatory hierarchy tracing, and remedy mapping."
-    },
-    {
-      id: "crag",
-      name: "7. Corrective RAG (CRAG)",
-      concept: "Self-evaluating retrieval confidence gate triggering autonomous CBUAE thesaurus query rewriting",
-      tech_stack: "Python 3.12 · ChromaDB · Retrieval Quality Evaluator · CBUAE Regulatory Domain Thesaurus",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 100.0,
-      avg_latency_ms: 22.9,
-      overall_score: 100.0,
-      badge: "Self-Healing Retrieval",
-      key_strength: "Detects low-confidence queries and rewrites informal colloquial jargon into official legal taxonomy.",
-      ideal_use_case: "Borrower-submitted informal inquiries ('how much can bank take when I leave', etc.)."
-    },
-    {
-      id: "self_rag",
-      name: "8. Self-RAG",
-      concept: "Autonomous self-reflection tokens ([Retrieve], [No-Retrieve], [Is-Rel], [Is-Sup]) and grounding critic",
-      tech_stack: "Python 3.12 · Self-Reflection Decision Tokens · Citation Grounding Critic · ChromaDB",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 100.0,
-      avg_latency_ms: 16.5,
-      overall_score: 100.0,
-      badge: "Adaptive Reflection Critic",
-      key_strength: "Bypasses retrieval for conversational pleasantries and validates every claim against cited articles.",
-      ideal_use_case: "Natural conversational dialog, greeting routing, and legal claim verification."
-    },
-    {
-      id: "multimodal",
-      name: "9. Multimodal RAG",
-      concept: "Structured 43-fee banking table AST parser and mathematical LaTeX formula interpreter",
-      tech_stack: "Python 3.12 · Markdown Table AST · LaTeX Formula Registry · ChromaDB",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 100.0,
-      avg_latency_ms: 19.8,
-      overall_score: 100.0,
-      badge: "Tabular & Math Expert",
-      key_strength: "Directly parses multidimensional fee schedules and evaluates mathematical formulas without OCR drift.",
-      ideal_use_case: "Retail fee schedule lookups (43 capped services) and compound interest math."
-    },
-    {
-      id: "agentic",
-      name: "10. Agentic RAG",
-      concept: "Autonomous tool-calling controller coordinating Math, SQL, Graph, and Vector search tools",
-      tech_stack: "Python 3.12 · Autonomous Multi-Tool Controller · Local Tool Registry (Math, SQL, Graph, Vector)",
-      recall_at_3: 100.0,
-      citation_accuracy: 100.0,
-      refusal_precision: 100.0,
-      rag_faithfulness: 100.0,
-      avg_latency_ms: 31.2,
-      overall_score: 100.0,
-      badge: "Autonomous Orchestration",
-      key_strength: "Executes complex multi-step facility audits, math verification, and legal citations end-to-end.",
-      ideal_use_case: "Full contract sanction letter auditing, multi-covenant cross-examination, and restitution dossier generation."
-    }
-  ];
+  const modeEvaluations = evalData?.scorer_version === '2.0' ? (evalData.mode_evaluations || []) : [];
 
   const sortedModes = [...modeEvaluations].sort((a: any, b: any) => {
     if (ragSortBy === 'speed') return a.avg_latency_ms - b.avg_latency_ms;
     if (ragSortBy === 'score') return b.overall_score - a.overall_score;
     return 0;
   });
+
+  const fastestMode = [...modeEvaluations].sort((a: any, b: any) => a.avg_latency_ms - b.avg_latency_ms)[0] || modeEvaluations[0];
+  const topScoreMode = [...modeEvaluations].sort((a: any, b: any) => b.overall_score - a.overall_score)[0] || modeEvaluations[0];
+  const topFaithfulMode = [...modeEvaluations].sort((a: any, b: any) => b.rag_faithfulness - a.rag_faithfulness)[0] || modeEvaluations[0];
 
   return (
     <div className="space-y-8 pb-16">
@@ -598,12 +456,12 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0a0f1d] border border-cyan-200 dark:border-cyan-500/30 col-span-2 sm:col-span-1">
             <div className="text-[10px] text-cyan-700 dark:text-cyan-300 uppercase font-bold tracking-wider">Overall RAG Score</div>
             <div className="text-3xl font-mono font-extrabold text-slate-900 dark:text-white mt-1">
-              {isLoading ? '...' : `${overallScore}%`}
+              {isLoading ? '...' : metric(overallScore)}
             </div>
             <div className="mt-2 w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
               <div
                 className="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full rounded-full transition-all duration-700"
-                style={{ width: `${Math.min(overallScore, 100)}%` }}
+                style={{ width: `${Math.min(overallScore ?? 0, 100)}%` }}
               />
             </div>
             <div className="text-[10px] text-slate-400 mt-1">
@@ -611,29 +469,29 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
             </div>
           </div>
 
-          {/* Retrieval Recall@3 */}
+          {/* Evidence Coverage@3 */}
           <div className="p-4 rounded-2xl bg-[#0a0f1d] border border-slate-800/90">
-            <div className="text-[10px] text-slate-400 uppercase font-semibold">Retrieval Recall@3</div>
+            <div className="text-[10px] text-slate-400 uppercase font-semibold">Evidence Coverage@3</div>
             <div className="text-2xl font-mono font-extrabold text-emerald-400 mt-1">
-              {isLoading ? '...' : `${evalData?.recall_at_3 ?? 100.0}%`}
+              {isLoading ? '...' : metric(evalData?.recall_at_3)}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Dense + BM25 top-3 accuracy</div>
+            <div className="text-[10px] text-slate-500 mt-1">Required evidence in top 3 passages</div>
           </div>
 
-          {/* Citation Groundedness */}
+          {/* Citation Coverage */}
           <div className="p-4 rounded-2xl bg-[#0a0f1d] border border-slate-800/90">
-            <div className="text-[10px] text-slate-400 uppercase font-semibold">Citation Groundedness</div>
+            <div className="text-[10px] text-slate-400 uppercase font-semibold">Citation Coverage</div>
             <div className="text-2xl font-mono font-extrabold text-emerald-400 mt-1">
-              {isLoading ? '...' : `${evalData?.citation_accuracy ?? 100.0}%`}
+              {isLoading ? '...' : metric(evalData?.citation_accuracy)}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">CBUAE circular match rate</div>
+            <div className="text-[10px] text-slate-500 mt-1">Emitted authority + supporting evidence</div>
           </div>
 
           {/* Refusal Precision */}
           <div className="p-4 rounded-2xl bg-[#0a0f1d] border border-slate-800/90">
             <div className="text-[10px] text-slate-400 uppercase font-semibold">Refusal Precision</div>
             <div className="text-2xl font-mono font-extrabold text-emerald-400 mt-1">
-              {isLoading ? '...' : `${evalData?.refusal_precision ?? 100.0}%`}
+              {isLoading ? '...' : metric(evalData?.refusal_precision)}
             </div>
             <div className="text-[10px] text-slate-500 mt-1">Foreign boundary protection</div>
           </div>
@@ -642,9 +500,9 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
           <div className="p-4 rounded-2xl bg-[#0a0f1d] border border-slate-800/90">
             <div className="text-[10px] text-slate-400 uppercase font-semibold">Mean RAG Latency</div>
             <div className="text-2xl font-mono font-extrabold text-teal-400 mt-1">
-              {isLoading ? '...' : `${evalData?.avg_latency_ms ?? 28.4} ms`}
+              {isLoading ? '...' : metric(evalData?.avg_latency_ms, ' ms')}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Sub-second local inference</div>
+            <div className="text-[10px] text-slate-500 mt-1">Measured run, includes initialization</div>
           </div>
 
         </div>
@@ -668,7 +526,7 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
             </div>
             <p className="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
               Side-by-side empirical performance benchmark of all 10 RAG patterns auditing Central Bank of the UAE (CBUAE) retail credit standards. 
-              Evaluates <strong>Recall@3</strong>, <strong>Citation Accuracy</strong>, <strong>Refusal Precision</strong>, <strong>Faithfulness</strong>, and <strong>Latency</strong>. 
+              Evaluates <strong>Evidence@3</strong>, <strong>Citation Accuracy</strong>, <strong>Refusal Precision</strong>, <strong>Numeric Support</strong>, and <strong>Latency</strong>.
               Results are persisted directly in ChromaDB collection <code className="text-cyan-400 font-mono">cbuae_eval_runs</code>.
             </p>
           </div>
@@ -707,11 +565,11 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
                 <Zap className="h-3.5 w-3.5" />
                 Fastest Execution
               </span>
-              <span className="font-mono text-xs font-extrabold">12.4 ms</span>
+              <span className="font-mono text-xs font-extrabold">{fastestMode?.avg_latency_ms?.toFixed(1) ?? 'N/A'} ms</span>
             </div>
-            <div className="text-sm font-bold text-white">5. SQL + Vector RAG</div>
+            <div className="text-sm font-bold text-white">{fastestMode?.name}</div>
             <p className="text-[11px] text-slate-400 leading-snug">
-              Direct relational queries on SQLite <code className="text-slate-300">cbuae_structured.db</code> deliver sub-15ms deterministic arithmetic.
+              {fastestMode?.badge}: {fastestMode?.key_strength}
             </p>
           </div>
 
@@ -719,13 +577,13 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
             <div className="flex items-center justify-between text-purple-400">
               <span className="text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5">
                 <Cpu className="h-3.5 w-3.5" />
-                Autonomous Orchestration
+                Highest Overall Score
               </span>
-              <span className="font-mono text-xs font-extrabold">100% Score</span>
+              <span className="font-mono text-xs font-extrabold">{topScoreMode?.overall_score?.toFixed(1) ?? 'N/A'}% Score</span>
             </div>
-            <div className="text-sm font-bold text-white">10. Agentic RAG</div>
+            <div className="text-sm font-bold text-white">{topScoreMode?.name}</div>
             <p className="text-[11px] text-slate-400 leading-snug">
-              Multi-tool autonomous controller dynamically coordinating Math, SQL, Graph, and Vector search end-to-end.
+              {topScoreMode?.badge}: Evidence@3 {topScoreMode?.recall_at_3}% · Citation Precision {topScoreMode?.citation_accuracy}%.
             </p>
           </div>
 
@@ -733,13 +591,13 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
             <div className="flex items-center justify-between text-blue-400">
               <span className="text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                Zero Chunk Amnesia
+                Highest Numeric Support
               </span>
-              <span className="font-mono text-xs font-extrabold">100% Precision</span>
+              <span className="font-mono text-xs font-extrabold">{topFaithfulMode?.rag_faithfulness?.toFixed(1) ?? 'N/A'}% Grounding</span>
             </div>
-            <div className="text-sm font-bold text-white">4. Contextual Chunking</div>
+            <div className="text-sm font-bold text-white">{topFaithfulMode?.name}</div>
             <p className="text-[11px] text-slate-400 leading-snug">
-              Hierarchical markdown AST breadcrumbs preserve legal circular authority across fine-print clauses.
+              {topFaithfulMode?.badge}: Token-presence proxy; not semantic or legal verification.
             </p>
           </div>
         </div>
@@ -751,11 +609,11 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
               <thead className="bg-[#070b14] text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
                 <tr>
                   <th className="py-3 px-4"># Rank &amp; Architecture Pattern</th>
-                  <th className="py-3 px-3">Best-in-Class Badge</th>
-                  <th className="py-3 px-3 text-center">Recall@3</th>
+                  <th className="py-3 px-3">Measured Outcome</th>
+                  <th className="py-3 px-3 text-center">Evidence@3</th>
                   <th className="py-3 px-3 text-center">Citation Acc</th>
                   <th className="py-3 px-3 text-center">Refusal Prec</th>
-                  <th className="py-3 px-3 text-center">Faithfulness</th>
+                  <th className="py-3 px-3 text-center">Numeric Support</th>
                   <th className="py-3 px-3 text-center">Mean Latency</th>
                   <th className="py-3 px-3 text-center">Overall Score</th>
                   <th className="py-3 px-4 text-center">Action</th>
@@ -794,19 +652,19 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
                         </td>
 
                         <td className="py-3 px-3 text-center font-mono font-semibold text-emerald-400 whitespace-nowrap">
-                          {m.recall_at_3}%
+                          {metric(m.recall_at_3)}
                         </td>
 
                         <td className="py-3 px-3 text-center font-mono font-semibold text-emerald-400 whitespace-nowrap">
-                          {m.citation_accuracy}%
+                          {metric(m.citation_accuracy)}
                         </td>
 
                         <td className="py-3 px-3 text-center font-mono font-semibold text-emerald-400 whitespace-nowrap">
-                          {m.refusal_precision}%
+                          {metric(m.refusal_precision)}
                         </td>
 
                         <td className="py-3 px-3 text-center font-mono font-semibold text-cyan-400 whitespace-nowrap">
-                          {m.rag_faithfulness}%
+                          {metric(m.numeric_support)}
                         </td>
 
                         <td className="py-3 px-3 text-center whitespace-nowrap">
@@ -882,10 +740,10 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
                                 <code className="text-cyan-300 font-mono font-semibold">{m.tech_stack}</code>
                               </div>
                               <div className="flex items-center gap-3">
-                                <span className="text-slate-400">ChromaDB Verification:</span>
+                                <span className="text-slate-400">Run Storage:</span>
                                 <span className="text-emerald-400 font-mono font-bold flex items-center gap-1">
                                   <CheckCircle2 className="h-3.5 w-3.5" />
-                                  Verified in cbuae_eval_runs
+                                  Stored in cbuae_eval_runs
                                 </span>
                               </div>
                             </div>
@@ -975,7 +833,7 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-              15-Inquiry Benchmark Test Cases &amp; Generated Responses
+              Per-Mode Benchmark Test Cases &amp; Generated Responses
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               Click any inquiry row to expand and inspect the exact answer generated by the CBUAE RAG agent.
@@ -1086,7 +944,7 @@ export const DiagnosticsHub: React.FC<DiagnosticsHubProps> = ({ health }) => {
                                   <div className="text-[10px] text-slate-500 pt-1 border-t border-slate-800 flex items-center gap-3">
                                     <span>Citation Match: {tc.citation_match ? '✅ Verified' : '⚠️ Deviated'}</span>
                                     <span>Retrieval Hit: {tc.retrieval_hit ? '✅ Hit' : '⚠️ Miss'}</span>
-                                    <span>Faithfulness: {tc.faithfulness * 100}%</span>
+                                    <span>Numeric Support: {metric(tc.numeric_support)}</span>
                                   </div>
                                 </div>
                               </div>

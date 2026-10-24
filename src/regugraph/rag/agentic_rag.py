@@ -182,6 +182,7 @@ def run_agentic_rag(query: str) -> Dict[str, Any]:
         "query": query,
         "answer": answer,
         "citation": primary_citation,
+        "retrieved_chunks": vector_hits,
         "tools_executed": list(tool_observations.keys()),
         "tool_observations": tool_observations,
         "execution_trace": execution_steps,

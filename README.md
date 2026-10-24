@@ -7,14 +7,14 @@
 [![LangGraph](https://img.shields.io/badge/Orchestrator-LangGraph-purple.svg)](https://langchain.com)
 [![ChromaDB](https://img.shields.io/badge/Vector%20Store-ChromaDB%200.6-orange.svg)](https://trychroma.com)
 [![BM25](https://img.shields.io/badge/Sparse%20Search-BM25%20Okapi-green.svg)](https://github.com/dorianbrown/rank_bm25)
-[![RAG Benchmark](https://img.shields.io/badge/Benchmark-100%25%20Faithfulness-brightgreen.svg)](evaluation/EVALUATION_REPORT.md)
+[![RAG Benchmark](https://img.shields.io/badge/Benchmark-measured_results-blue.svg)](evaluation/EVALUATION_REPORT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
 ## 📌 Project Primer (One-Liner Summary)
 
-> **`ReguGraph-UAE` helps retail bank borrowers, compliance risk officers, and regulatory auditors answer Central Bank of the UAE (CBUAE) credit-compliance and contract-legality questions from authoritative CBUAE regulatory circulars and fee schedules in a modern React/Vite fintech dashboard with 100.0% statutory faithfulness and zero mathematical hallucination.**
+> **`ReguGraph-UAE` helps retail bank borrowers, compliance risk officers, and regulatory auditors explore credit-compliance questions using a local CBUAE regulatory corpus, cited answers, calculators, and a React/Vite dashboard. Evaluation results and limitations are published in the measured benchmark report.**
 
 ---
 
@@ -110,19 +110,15 @@ Document ingestion is handled by [`src/regugraph/ingestion.py`](src/regugraph/in
 
 ---
 
-## 4. RAG Triad Evaluation & Benchmark Results
+## 4. Measured Evaluation & Benchmark Results
 
-`ReguGraph-UAE` features a standalone 15-question benchmark harness (`evaluation/run_evaluation.py`) tested across 8 regulatory categories:
+The benchmark executes all ten registered RAG modes against the same 17 queries (170 measured cases). Each run stores its full answers, retrieved passages, scoring checks, failures, latency, and source/dataset hashes in `evaluation/runs/` and ChromaDB.
 
-| Evaluation Dimension | Week 2 Grading Target | ReguGraph-UAE Result | Benchmark Verdict |
-| :--- | :---: | :---: | :---: |
-| **Hybrid Retrieval Recall@3** | $\ge 90.0\%$ | **100.0% (12/12)** | **FLAWLESS** |
-| **Citation Accuracy & Grounding** | $\ge 90.0\%$ | **100.0% (12/12)** | **FLAWLESS** |
-| **Refusal Boundary Precision** | $100.0\%$ | **100.0% (3/3)** | **ZERO HALLUCINATION** |
-| **RAG Triad Faithfulness** | $\ge 95.0\%$ | **100.0%** | **VERIFIED** |
-| **Mean End-to-End Latency** | $< 1,500$ ms | **182.0 ms** | **REAL-TIME** |
+Scorer 2.0 checks required answer facts, evidence under the expected authority in the first three passages, emitted instrument/article citations, unsupported numeric tokens, and refusal behavior. All applicable checks must pass; a high weighted score cannot hide a failed check. Refusal cases are excluded from retrieval and citation denominators. Numeric support is a token-presence proxy, not semantic faithfulness or legal certification.
 
-Full per-query benchmark breakdown and failure mode analysis is available in [`evaluation/EVALUATION_REPORT.md`](evaluation/EVALUATION_REPORT.md).
+The current measured results, including every mode's failures, are in [`evaluation/EVALUATION_REPORT.md`](evaluation/EVALUATION_REPORT.md). The Diagnostics dashboard reads the same persisted run through `/api/evaluations/latest`; missing or legacy results display no score rather than fixed fallback values.
+
+This small development set is not a held-out evaluation, and the local corpus has not been independently verified as current legal ground truth. See [`evaluation/FINAL_VERIFICATION.md`](evaluation/FINAL_VERIFICATION.md) for the validation record and remaining limitations.
 
 ---
 
@@ -130,7 +126,7 @@ Full per-query benchmark breakdown and failure mode analysis is available in [`e
 
 To guarantee total presentation cleanliness for executive demonstrations while providing deep technical observability:
 * **Port 5173 (Main Regulatory Platform):** Renders the retail borrower dashboard, interactive digital credit cards with EMV chip visualizers, DBR radial gauges, drag-and-drop Word/PDF audit dropzone, and Word (.docx) restitution demand letter export.
-* **Port 5174 (Diagnostics & Telemetry Hub):** Isolated observability dashboard with real-time daemon heartbeats, an automated 5-minute background refresh timer, and the live 15-inquiry RAG benchmark evaluation scorecard.
+* **Port 5174 (Diagnostics & Telemetry Hub):** Isolated observability dashboard with daemon heartbeats and the measured all-mode RAG benchmark evaluation scorecard.
 * **Port 8000:** High-throughput FastAPI ASGI backend gateway.
 * **Port 8081:** ChromaDB standalone REST vector server.
 * **Port 8090:** Custom Chroma Web UI visualizer.
@@ -191,4 +187,4 @@ python evaluation/run_evaluation.py
 - **Author:** **Jayanth Malipeddy**
 - **Engineering Assistance:** Google DeepMind's Antigravity AI Assistant
 - **GitHub Repository:** [https://github.com/JayanthMalipeddy/regugraph-uae](https://github.com/JayanthMalipeddy/regugraph-uae)
-- **Evaluation Status:** 15/15 Benchmark Inquiries Passing (100% Recall@3, 100% Citation Accuracy, 100% Refusal Precision)
+- **Evaluation Status:** Measured per-mode results and failed cases are published in the benchmark report; no blanket 100% accuracy claim.

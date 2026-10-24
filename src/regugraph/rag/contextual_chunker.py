@@ -161,6 +161,7 @@ def run_contextual_chunking_rag(query: str, top_k: int = 2) -> Dict[str, Any]:
                 "article_header": r["chunk"]["article_header"],
                 "circular_ref": r["chunk"]["circular_ref"],
                 "similarity": r["similarity"],
+                "content": r["chunk"]["contextualized_content"],
                 "contextualized_preview": r["chunk"]["contextualized_content"][:300] + "..."
             }
             for r in results
